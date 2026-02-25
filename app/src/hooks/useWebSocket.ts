@@ -66,6 +66,29 @@ export function useWebSocket(): {
         console.log('WebSocket disconnected');
         setConnected(false);
 
+        // If we were in a chat or searching, reset the state
+        // because the server has lost our pairing
+        setChatState(prev => {
+          if (prev.status === 'matched' || prev.status === 'searching') {
+            return {
+              ...prev,
+              status: 'disconnected',
+              partnerId: null,
+              isTyping: false,
+              messages: [
+                ...prev.messages,
+                {
+                  id: generateMessageId(),
+                  text: 'Connection lost. Click "New" to reconnect and find a new chat.',
+                  sender: 'system',
+                  timestamp: Date.now(),
+                },
+              ],
+            };
+          }
+          return prev;
+        });
+
         // Attempt to reconnect after 3 seconds
         reconnectTimeoutRef.current = setTimeout(() => {
           console.log('Attempting to reconnect...');
@@ -87,6 +110,28 @@ export function useWebSocket(): {
     switch (data.type) {
       case 'connected':
         console.log('Connected with userId:', data.userId);
+        // If we reconnected, ensure we're in a clean state
+        // (server gave us a new userId, old pairing is gone)
+        setChatState(prev => {
+          if (prev.status === 'matched' || prev.status === 'searching') {
+            return {
+              ...prev,
+              status: 'disconnected',
+              partnerId: null,
+              isTyping: false,
+              messages: [
+                ...prev.messages,
+                {
+                  id: generateMessageId(),
+                  text: 'Reconnected to server. Click "New" to start a new chat.',
+                  sender: 'system',
+                  timestamp: Date.now(),
+                },
+              ],
+            };
+          }
+          return prev;
+        });
         break;
 
       case 'waiting':
