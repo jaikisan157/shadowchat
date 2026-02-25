@@ -27,6 +27,7 @@ export function useWebSocket(): {
     messages: [],
     isTyping: false,
     errorMessage: '',
+    onlineCount: 0,
   });
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -119,6 +120,7 @@ export function useWebSocket(): {
               status: 'disconnected',
               partnerId: null,
               isTyping: false,
+              onlineCount: data.onlineCount || prev.onlineCount,
               messages: [
                 ...prev.messages,
                 {
@@ -130,7 +132,7 @@ export function useWebSocket(): {
               ],
             };
           }
-          return prev;
+          return { ...prev, onlineCount: data.onlineCount || prev.onlineCount };
         });
         break;
 
@@ -277,6 +279,13 @@ export function useWebSocket(): {
         }));
         break;
 
+      case 'online_count':
+        setChatState(prev => ({
+          ...prev,
+          onlineCount: data.count,
+        }));
+        break;
+
       case 'error':
         setChatState(prev => ({
           ...prev,
@@ -296,13 +305,14 @@ export function useWebSocket(): {
   const findMatch = useCallback((interests?: string[]) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       // Clear messages and set searching state
-      setChatState({
+      setChatState(prev => ({
         status: 'searching',
         partnerId: null,
         messages: [],
         isTyping: false,
         errorMessage: '',
-      });
+        onlineCount: prev.onlineCount,
+      }));
 
       wsRef.current.send(JSON.stringify({
         type: 'find_match',
@@ -344,13 +354,14 @@ export function useWebSocket(): {
   const newChat = useCallback((interests?: string[]) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       // Clear messages and set searching state
-      setChatState({
+      setChatState(prev => ({
         status: 'searching',
         partnerId: null,
         messages: [],
         isTyping: false,
         errorMessage: '',
-      });
+        onlineCount: prev.onlineCount,
+      }));
 
       wsRef.current.send(JSON.stringify({
         type: 'new_chat',

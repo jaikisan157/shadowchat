@@ -4,16 +4,17 @@ import { ChevronRight } from 'lucide-react';
 
 interface HeroSectionProps {
   onStartChat: () => void;
+  onlineCount: number;
 }
 
-export function HeroSection({ onStartChat }: HeroSectionProps) {
+export function HeroSection({ onStartChat, onlineCount }: HeroSectionProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const headlineRef = useRef<HTMLDivElement>(null);
   const subheadRef = useRef<HTMLParagraphElement>(null);
   const ctaRef = useRef<HTMLButtonElement>(null);
   const microRef = useRef<HTMLSpanElement>(null);
   const chevronsRef = useRef<HTMLDivElement>(null);
-  
+
   useEffect(() => {
     const ctx = gsap.context(() => {
       // Initial state
@@ -22,10 +23,10 @@ export function HeroSection({ onStartChat }: HeroSectionProps) {
       gsap.set(ctaRef.current, { opacity: 0, y: 14 });
       gsap.set(microRef.current, { opacity: 0 });
       gsap.set('.chevron-item', { opacity: 0, x: 12, scale: 0.98 });
-      
+
       // Animation timeline
       const tl = gsap.timeline({ delay: 0.3 });
-      
+
       tl.to('.headline-line', {
         opacity: 1,
         y: 0,
@@ -33,36 +34,36 @@ export function HeroSection({ onStartChat }: HeroSectionProps) {
         stagger: 0.08,
         ease: 'power2.out',
       })
-      .to(subheadRef.current, {
-        opacity: 1,
-        y: 0,
-        duration: 0.5,
-        ease: 'power2.out',
-      }, '-=0.2')
-      .to(ctaRef.current, {
-        opacity: 1,
-        y: 0,
-        duration: 0.5,
-        ease: 'power2.out',
-      }, '-=0.3')
-      .to(microRef.current, {
-        opacity: 1,
-        duration: 0.4,
-        ease: 'power2.out',
-      }, '-=0.2')
-      .to('.chevron-item', {
-        opacity: 1,
-        x: 0,
-        scale: 1,
-        duration: 0.5,
-        stagger: 0.1,
-        ease: 'power2.out',
-      }, '-=0.4');
+        .to(subheadRef.current, {
+          opacity: 1,
+          y: 0,
+          duration: 0.5,
+          ease: 'power2.out',
+        }, '-=0.2')
+        .to(ctaRef.current, {
+          opacity: 1,
+          y: 0,
+          duration: 0.5,
+          ease: 'power2.out',
+        }, '-=0.3')
+        .to(microRef.current, {
+          opacity: 1,
+          duration: 0.4,
+          ease: 'power2.out',
+        }, '-=0.2')
+        .to('.chevron-item', {
+          opacity: 1,
+          x: 0,
+          scale: 1,
+          duration: 0.5,
+          stagger: 0.1,
+          ease: 'power2.out',
+        }, '-=0.4');
     }, containerRef);
-    
+
     return () => ctx.revert();
   }, []);
-  
+
   // Handle space key press
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -71,13 +72,13 @@ export function HeroSection({ onStartChat }: HeroSectionProps) {
         onStartChat();
       }
     };
-    
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onStartChat]);
-  
+
   return (
-    <div 
+    <div
       ref={containerRef}
       className="relative w-full h-screen bg-black flex flex-col justify-center overflow-hidden"
     >
@@ -87,7 +88,7 @@ export function HeroSection({ onStartChat }: HeroSectionProps) {
           ShadowChat
         </span>
       </div>
-      
+
       {/* Nav Links */}
       <nav className="absolute right-[5vw] top-[4.2vh] flex items-center gap-6">
         <button className="text-sm text-text-secondary hover:text-text-primary transition-colors">
@@ -100,27 +101,27 @@ export function HeroSection({ onStartChat }: HeroSectionProps) {
           Privacy
         </button>
       </nav>
-      
+
       {/* Main Content */}
       <div className="pl-[5vw] pr-[5vw]">
         {/* Headline */}
         <div ref={headlineRef} className="mb-8">
           <h1 className="font-heading font-bold uppercase tracking-tight leading-[0.95]"
-              style={{ fontSize: 'clamp(44px, 6vw, 84px)' }}>
+            style={{ fontSize: 'clamp(44px, 6vw, 84px)' }}>
             <div className="headline-line text-text-primary">TALK</div>
             <div className="headline-line text-text-primary">TO</div>
             <div className="headline-line text-neon-cyan neon-text">STRANGERS</div>
           </h1>
         </div>
-        
+
         {/* Subheadline */}
-        <p 
+        <p
           ref={subheadRef}
           className="text-text-secondary text-base md:text-lg max-w-[34vw] mb-8 leading-relaxed"
         >
           Anonymous, one-on-one, no accounts. Just click and start talking to someone new.
         </p>
-        
+
         {/* CTA Button */}
         <button
           ref={ctaRef}
@@ -130,10 +131,10 @@ export function HeroSection({ onStartChat }: HeroSectionProps) {
         >
           Start Chat
         </button>
-        
+
         {/* Micro Text */}
         <div>
-          <span 
+          <span
             ref={microRef}
             className="font-mono text-xs text-text-secondary/55"
           >
@@ -141,9 +142,9 @@ export function HeroSection({ onStartChat }: HeroSectionProps) {
           </span>
         </div>
       </div>
-      
+
       {/* Decorative Chevrons */}
-      <div 
+      <div
         ref={chevronsRef}
         className="absolute right-[6vw] top-1/2 -translate-y-1/2 flex flex-col gap-2"
       >
@@ -151,13 +152,23 @@ export function HeroSection({ onStartChat }: HeroSectionProps) {
         <ChevronRight className="chevron-item w-8 h-8 text-white/18 stroke-[2]" />
         <ChevronRight className="chevron-item w-8 h-8 text-white/18 stroke-[2]" />
       </div>
-      
-      {/* Connection Status Indicator */}
-      <div className="absolute bottom-[4vh] right-[5vw] flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
-        <span className="font-mono text-xs text-text-secondary">
-          Live server connected
-        </span>
+
+      {/* Connection Status & Online Counter */}
+      <div className="absolute bottom-[4vh] right-[5vw] flex items-center gap-4">
+        {onlineCount > 0 && (
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-neon-cyan animate-pulse" />
+            <span className="font-mono text-xs text-neon-cyan">
+              {onlineCount.toLocaleString()} online
+            </span>
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
+          <span className="font-mono text-xs text-text-secondary">
+            Live server connected
+          </span>
+        </div>
       </div>
     </div>
   );

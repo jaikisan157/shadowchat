@@ -91,6 +91,17 @@ function disconnectUser(userId) {
   userSockets.delete(userId);
 }
 
+// Broadcast online count to all connected clients
+function broadcastOnlineCount() {
+  const count = wss.clients.size;
+  const message = JSON.stringify({ type: 'online_count', count });
+  for (const client of wss.clients) {
+    if (client.readyState === 1) {
+      client.send(message);
+    }
+  }
+}
+
 // Handle WebSocket connections
 wss.on('connection', (ws, req) => {
   const userId = generateUserId();
@@ -98,11 +109,15 @@ wss.on('connection', (ws, req) => {
 
   console.log(`User connected: ${userId}, Total connections: ${wss.clients.size}`);
 
-  // Send user their ID
+  // Send user their ID and current online count
   ws.send(JSON.stringify({
     type: 'connected',
-    userId: userId
+    userId: userId,
+    onlineCount: wss.clients.size
   }));
+
+  // Notify everyone about updated count
+  broadcastOnlineCount();
 
   // Handle messages
   ws.on('message', (data) => {
@@ -225,6 +240,8 @@ wss.on('connection', (ws, req) => {
   // Handle disconnect
   ws.on('close', () => {
     console.log(`User disconnected: ${userId}`);
+    // Notify everyone about updated count (after a short delay so wss.clients is updated)
+    setTimeout(() => broadcastOnlineCount(), 100);
     disconnectUser(userId);
   });
 

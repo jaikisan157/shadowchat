@@ -11,10 +11,11 @@ export interface ChatState {
   messages: Message[];
   isTyping: boolean;
   errorMessage: string;
+  onlineCount: number;
 }
 
 export type WebSocketMessage =
-  | { type: 'connected'; userId: string }
+  | { type: 'connected'; userId: string; onlineCount: number }
   | { type: 'waiting'; message: string }
   | { type: 'matched'; partnerId: string; message: string }
   | { type: 'message'; from: 'stranger'; text: string; timestamp: number }
@@ -24,6 +25,7 @@ export type WebSocketMessage =
   | { type: 'search_cancelled' }
   | { type: 'search_timeout'; message: string }
   | { type: 'typing'; isTyping: boolean }
+  | { type: 'online_count'; count: number }
   | { type: 'error'; message: string };
 
 export interface UseWebSocketReturn {

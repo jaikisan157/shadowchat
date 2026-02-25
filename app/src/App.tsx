@@ -87,7 +87,7 @@ function App() {
         ref={heroRef}
         className={`${showChat ? 'absolute inset-0 z-10' : 'relative z-20'}`}
       >
-        <HeroSection onStartChat={handleStartChat} />
+        <HeroSection onStartChat={handleStartChat} onlineCount={chatState.onlineCount} />
       </div>
 
       {/* Chat Section */}
