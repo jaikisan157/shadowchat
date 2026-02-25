@@ -21,6 +21,9 @@ const wss = new WebSocketServer({ server });
 const waitingUsers = new Map(); // userId -> { ws, interests }
 const activePairs = new Map(); // userId -> partnerId
 const userSockets = new Map(); // userId -> ws
+const lastActivity = new Map(); // userId -> timestamp
+
+const IDLE_TIMEOUT = 3 * 60 * 1000; // 3 minutes
 
 // Generate unique user ID
 function generateUserId() {
@@ -89,6 +92,7 @@ function disconnectUser(userId) {
 
   waitingUsers.delete(userId);
   userSockets.delete(userId);
+  lastActivity.delete(userId);
 }
 
 // Broadcast online count to all connected clients
@@ -116,6 +120,9 @@ wss.on('connection', (ws, req) => {
     onlineCount: wss.clients.size
   }));
 
+  // Track activity
+  lastActivity.set(userId, Date.now());
+
   // Notify everyone about updated count
   broadcastOnlineCount();
 
@@ -123,6 +130,9 @@ wss.on('connection', (ws, req) => {
   ws.on('message', (data) => {
     try {
       const message = JSON.parse(data.toString());
+
+      // Update activity on any message
+      lastActivity.set(userId, Date.now());
 
       switch (message.type) {
         case 'find_match':
@@ -301,3 +311,23 @@ setInterval(() => {
 }, 60000);
 
 export { server, wss };
+
+// Clean up idle users every 30 seconds
+setInterval(() => {
+  const now = Date.now();
+
+  for (const [userId, timestamp] of lastActivity) {
+    if (now - timestamp > IDLE_TIMEOUT) {
+      const ws = userSockets.get(userId);
+      if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({
+          type: 'error',
+          message: 'Disconnected due to inactivity.'
+        }));
+        ws.close();
+      }
+      console.log(`User ${userId} disconnected due to inactivity`);
+      disconnectUser(userId);
+    }
+  }
+}, 30000);
