@@ -21,14 +21,15 @@ export function useWebSocket(): {
     isTyping: false,
     errorMessage: '',
   });
-  
+
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
+  const handleMessageRef = useRef<(data: WebSocketMessage) => void>(() => { });
+
   const connect = useCallback(() => {
     try {
       const ws = new WebSocket(WS_URL);
-      
+
       ws.onopen = () => {
         console.log('WebSocket connected');
         setConnected(true);
@@ -37,43 +38,43 @@ export function useWebSocket(): {
           reconnectTimeoutRef.current = null;
         }
       };
-      
+
       ws.onmessage = (event) => {
         try {
           const data: WebSocketMessage = JSON.parse(event.data);
-          handleMessage(data);
+          handleMessageRef.current(data);
         } catch (error) {
           console.error('Error parsing message:', error);
         }
       };
-      
+
       ws.onclose = () => {
         console.log('WebSocket disconnected');
         setConnected(false);
-        
+
         // Attempt to reconnect after 3 seconds
         reconnectTimeoutRef.current = setTimeout(() => {
           console.log('Attempting to reconnect...');
           connect();
         }, 3000);
       };
-      
+
       ws.onerror = (error) => {
         console.error('WebSocket error:', error);
       };
-      
+
       wsRef.current = ws;
     } catch (error) {
       console.error('Error creating WebSocket:', error);
     }
   }, []);
-  
-  const handleMessage = useCallback((data: WebSocketMessage) => {
+
+  const handleMessage = (data: WebSocketMessage) => {
     switch (data.type) {
       case 'connected':
         console.log('Connected with userId:', data.userId);
         break;
-        
+
       case 'waiting':
         setChatState(prev => ({
           ...prev,
@@ -89,7 +90,7 @@ export function useWebSocket(): {
           ],
         }));
         break;
-        
+
       case 'matched':
         setChatState(prev => ({
           ...prev,
@@ -106,7 +107,7 @@ export function useWebSocket(): {
           ],
         }));
         break;
-        
+
       case 'message':
         setChatState(prev => ({
           ...prev,
@@ -122,7 +123,7 @@ export function useWebSocket(): {
           ],
         }));
         break;
-        
+
       case 'message_sent':
         setChatState(prev => ({
           ...prev,
@@ -137,7 +138,7 @@ export function useWebSocket(): {
           ],
         }));
         break;
-        
+
       case 'partner_disconnected':
         setChatState(prev => ({
           ...prev,
@@ -154,7 +155,7 @@ export function useWebSocket(): {
           ],
         }));
         break;
-        
+
       case 'chat_ended':
         setChatState(prev => ({
           ...prev,
@@ -171,7 +172,7 @@ export function useWebSocket(): {
           ],
         }));
         break;
-        
+
       case 'search_cancelled':
         setChatState(prev => ({
           ...prev,
@@ -187,7 +188,7 @@ export function useWebSocket(): {
           ],
         }));
         break;
-        
+
       case 'search_timeout':
         setChatState(prev => ({
           ...prev,
@@ -203,14 +204,14 @@ export function useWebSocket(): {
           ],
         }));
         break;
-        
+
       case 'typing':
         setChatState(prev => ({
           ...prev,
           isTyping: data.isTyping,
         }));
         break;
-        
+
       case 'error':
         setChatState(prev => ({
           ...prev,
@@ -218,19 +219,22 @@ export function useWebSocket(): {
           errorMessage: data.message,
         }));
         break;
-        
+
       default:
         console.log('Unknown message type:', data);
     }
-  }, []);
-  
+  };
+
+  // Keep ref in sync so WebSocket closure always uses latest handler
+  handleMessageRef.current = handleMessage;
+
   const findMatch = useCallback((interests?: string[]) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
         type: 'find_match',
         interests: interests || [],
       }));
-      
+
       setChatState(prev => ({
         ...prev,
         status: 'searching',
@@ -240,13 +244,13 @@ export function useWebSocket(): {
       }));
     }
   }, []);
-  
+
   const cancelSearch = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: 'cancel_search' }));
     }
   }, []);
-  
+
   const sendMessage = useCallback((text: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN && text.trim()) {
       wsRef.current.send(JSON.stringify({
@@ -255,7 +259,7 @@ export function useWebSocket(): {
       }));
     }
   }, []);
-  
+
   const sendTyping = useCallback((isTyping: boolean) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
@@ -264,20 +268,20 @@ export function useWebSocket(): {
       }));
     }
   }, []);
-  
+
   const stopChat = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: 'stop_chat' }));
     }
   }, []);
-  
+
   const newChat = useCallback((interests?: string[]) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
         type: 'new_chat',
         interests: interests || [],
       }));
-      
+
       setChatState(prev => ({
         ...prev,
         status: 'searching',
@@ -287,10 +291,10 @@ export function useWebSocket(): {
       }));
     }
   }, []);
-  
+
   useEffect(() => {
     connect();
-    
+
     return () => {
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
@@ -300,7 +304,7 @@ export function useWebSocket(): {
       }
     };
   }, [connect]);
-  
+
   return {
     connected,
     chatState,
