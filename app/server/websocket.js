@@ -74,8 +74,8 @@ function pairUsers(user1Id, user2Id) {
   }
 }
 
-// Disconnect a user and clean up
-function disconnectUser(userId) {
+// End a chat session (keeps user connected, just cleans up pairing)
+function endChat(userId) {
   const partnerId = activePairs.get(userId);
 
   if (partnerId) {
@@ -91,6 +91,11 @@ function disconnectUser(userId) {
   }
 
   waitingUsers.delete(userId);
+}
+
+// Fully disconnect a user (when WebSocket closes)
+function disconnectUser(userId) {
+  endChat(userId);
   userSockets.delete(userId);
   lastActivity.delete(userId);
 }
@@ -204,7 +209,7 @@ wss.on('connection', (ws, req) => {
           break;
 
         case 'stop_chat':
-          disconnectUser(userId);
+          endChat(userId);
           ws.send(JSON.stringify({
             type: 'chat_ended',
             message: 'You ended the chat.'
@@ -212,8 +217,8 @@ wss.on('connection', (ws, req) => {
           break;
 
         case 'new_chat':
-          // Disconnect from current chat if any
-          disconnectUser(userId);
+          // End current chat if any (but keep socket alive)
+          endChat(userId);
 
           // Start looking for new match
           waitingUsers.set(userId, {
