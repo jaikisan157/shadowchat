@@ -169,8 +169,11 @@ export function useWebSocket(): {
         break;
 
       case 'message':
+        // If we receive a message, we're definitely in an active chat
+        // Restore 'matched' status if it was accidentally changed
         setChatState(prev => ({
           ...prev,
+          status: 'matched',
           isTyping: false,
           messages: [
             ...prev.messages,
