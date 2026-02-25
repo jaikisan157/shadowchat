@@ -373,7 +373,20 @@ export function useWebSocket(): {
   useEffect(() => {
     connect();
 
+    // Proactively close WebSocket when tab/browser is closed
+    const handleUnload = () => {
+      if (wsRef.current) {
+        wsRef.current.onclose = null;
+        wsRef.current.close();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleUnload);
+    window.addEventListener('pagehide', handleUnload); // better mobile support
+
     return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+      window.removeEventListener('pagehide', handleUnload);
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }

@@ -284,7 +284,7 @@ wss.on('connection', (ws, req) => {
 
     isAlive = false;
     ws.ping();
-  }, 15000);
+  }, 10000);
 
   ws.on('close', () => {
     clearInterval(pingInterval);
