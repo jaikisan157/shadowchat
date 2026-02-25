@@ -260,6 +260,17 @@ input:focus, textarea:focus {
   animation: slideInLeft 0.4s ease-out forwards;
 }
 
+/* Mobile Viewport Height */
+.h-dvh {
+  height: 100vh; /* fallback */
+  height: 100dvh;
+}
+
+/* Safe area padding for notched devices */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   *,

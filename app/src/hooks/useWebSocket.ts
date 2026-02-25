@@ -3,6 +3,13 @@ import type { ChatState, WebSocketMessage } from '@/types/chat';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
 
+// Unique ID generator to avoid duplicate keys
+let messageIdCounter = 0;
+function generateMessageId(): string {
+  messageIdCounter += 1;
+  return `${Date.now()}-${messageIdCounter}`;
+}
+
 export function useWebSocket(): {
   connected: boolean;
   chatState: ChatState;
@@ -27,6 +34,13 @@ export function useWebSocket(): {
   const handleMessageRef = useRef<(data: WebSocketMessage) => void>(() => { });
 
   const connect = useCallback(() => {
+    // Close existing connection if any
+    if (wsRef.current) {
+      wsRef.current.onclose = null; // prevent reconnect loop
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+
     try {
       const ws = new WebSocket(WS_URL);
 
@@ -82,7 +96,7 @@ export function useWebSocket(): {
           messages: [
             ...prev.messages,
             {
-              id: Date.now().toString(),
+              id: generateMessageId(),
               text: data.message,
               sender: 'system',
               timestamp: Date.now(),
@@ -96,10 +110,11 @@ export function useWebSocket(): {
           ...prev,
           status: 'matched',
           partnerId: data.partnerId,
+          isTyping: false,
           messages: [
             ...prev.messages,
             {
-              id: Date.now().toString(),
+              id: generateMessageId(),
               text: data.message,
               sender: 'system',
               timestamp: Date.now(),
@@ -115,7 +130,7 @@ export function useWebSocket(): {
           messages: [
             ...prev.messages,
             {
-              id: Date.now().toString(),
+              id: generateMessageId(),
               text: data.text,
               sender: 'stranger',
               timestamp: data.timestamp,
@@ -130,7 +145,7 @@ export function useWebSocket(): {
           messages: [
             ...prev.messages,
             {
-              id: Date.now().toString(),
+              id: generateMessageId(),
               text: data.text,
               sender: 'user',
               timestamp: data.timestamp,
@@ -144,10 +159,11 @@ export function useWebSocket(): {
           ...prev,
           status: 'disconnected',
           partnerId: null,
+          isTyping: false,
           messages: [
             ...prev.messages,
             {
-              id: Date.now().toString(),
+              id: generateMessageId(),
               text: data.message,
               sender: 'system',
               timestamp: Date.now(),
@@ -161,10 +177,11 @@ export function useWebSocket(): {
           ...prev,
           status: 'idle',
           partnerId: null,
+          isTyping: false,
           messages: [
             ...prev.messages,
             {
-              id: Date.now().toString(),
+              id: generateMessageId(),
               text: data.message,
               sender: 'system',
               timestamp: Date.now(),
@@ -180,7 +197,7 @@ export function useWebSocket(): {
           messages: [
             ...prev.messages,
             {
-              id: Date.now().toString(),
+              id: generateMessageId(),
               text: 'Search cancelled.',
               sender: 'system',
               timestamp: Date.now(),
@@ -196,7 +213,7 @@ export function useWebSocket(): {
           messages: [
             ...prev.messages,
             {
-              id: Date.now().toString(),
+              id: generateMessageId(),
               text: data.message,
               sender: 'system',
               timestamp: Date.now(),
@@ -230,17 +247,18 @@ export function useWebSocket(): {
 
   const findMatch = useCallback((interests?: string[]) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
+      // Clear messages and set searching state
+      setChatState({
+        status: 'searching',
+        partnerId: null,
+        messages: [],
+        isTyping: false,
+        errorMessage: '',
+      });
+
       wsRef.current.send(JSON.stringify({
         type: 'find_match',
         interests: interests || [],
-      }));
-
-      setChatState(prev => ({
-        ...prev,
-        status: 'searching',
-        messages: [],
-        partnerId: null,
-        isTyping: false,
       }));
     }
   }, []);
@@ -277,17 +295,18 @@ export function useWebSocket(): {
 
   const newChat = useCallback((interests?: string[]) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
+      // Clear messages and set searching state
+      setChatState({
+        status: 'searching',
+        partnerId: null,
+        messages: [],
+        isTyping: false,
+        errorMessage: '',
+      });
+
       wsRef.current.send(JSON.stringify({
         type: 'new_chat',
         interests: interests || [],
-      }));
-
-      setChatState(prev => ({
-        ...prev,
-        status: 'searching',
-        messages: [],
-        partnerId: null,
-        isTyping: false,
       }));
     }
   }, []);
@@ -300,6 +319,7 @@ export function useWebSocket(): {
         clearTimeout(reconnectTimeoutRef.current);
       }
       if (wsRef.current) {
+        wsRef.current.onclose = null; // prevent reconnect on unmount
         wsRef.current.close();
       }
     };

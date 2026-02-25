@@ -9,7 +9,7 @@ const server = createServer((req, res) => {
     res.end(JSON.stringify({ status: 'ok', connections: wss.clients.size }));
     return;
   }
-  
+
   res.writeHead(404);
   res.end('Not found');
 });
@@ -44,12 +44,16 @@ function findMatch(userId, interests = []) {
 
 // Pair two users
 function pairUsers(user1Id, user2Id) {
+  // Remove both from waiting queue first
+  waitingUsers.delete(user1Id);
+  waitingUsers.delete(user2Id);
+
   activePairs.set(user1Id, user2Id);
   activePairs.set(user2Id, user1Id);
-  
+
   const user1Ws = userSockets.get(user1Id);
   const user2Ws = userSockets.get(user2Id);
-  
+
   if (user1Ws && user1Ws.readyState === 1) { // WebSocket.OPEN = 1
     user1Ws.send(JSON.stringify({
       type: 'matched',
@@ -57,7 +61,7 @@ function pairUsers(user1Id, user2Id) {
       message: "You're chatting with a random stranger. Say hi!"
     }));
   }
-  
+
   if (user2Ws && user2Ws.readyState === 1) {
     user2Ws.send(JSON.stringify({
       type: 'matched',
@@ -70,7 +74,7 @@ function pairUsers(user1Id, user2Id) {
 // Disconnect a user and clean up
 function disconnectUser(userId) {
   const partnerId = activePairs.get(userId);
-  
+
   if (partnerId) {
     const partnerWs = userSockets.get(partnerId);
     if (partnerWs && partnerWs.readyState === 1) {
@@ -82,7 +86,7 @@ function disconnectUser(userId) {
     activePairs.delete(partnerId);
     activePairs.delete(userId);
   }
-  
+
   waitingUsers.delete(userId);
   userSockets.delete(userId);
 }
@@ -91,28 +95,28 @@ function disconnectUser(userId) {
 wss.on('connection', (ws, req) => {
   const userId = generateUserId();
   userSockets.set(userId, ws);
-  
+
   console.log(`User connected: ${userId}, Total connections: ${wss.clients.size}`);
-  
+
   // Send user their ID
   ws.send(JSON.stringify({
     type: 'connected',
     userId: userId
   }));
-  
+
   // Handle messages
   ws.on('message', (data) => {
     try {
       const message = JSON.parse(data.toString());
-      
+
       switch (message.type) {
         case 'find_match':
           // Remove from waiting if already there
           waitingUsers.delete(userId);
-          
+
           // Try to find a match
           const matchId = findMatch(userId, message.interests || []);
-          
+
           if (matchId) {
             // Found a match
             waitingUsers.delete(matchId);
@@ -124,21 +128,21 @@ wss.on('connection', (ws, req) => {
               interests: message.interests || [],
               timestamp: Date.now()
             });
-            
+
             ws.send(JSON.stringify({
               type: 'waiting',
               message: 'Looking for someone to chat with...'
             }));
           }
           break;
-          
+
         case 'cancel_search':
           waitingUsers.delete(userId);
           ws.send(JSON.stringify({
             type: 'search_cancelled'
           }));
           break;
-          
+
         case 'message':
           const partnerId = activePairs.get(userId);
           if (partnerId) {
@@ -151,7 +155,7 @@ wss.on('connection', (ws, req) => {
                 timestamp: Date.now()
               }));
             }
-            
+
             // Confirm to sender
             ws.send(JSON.stringify({
               type: 'message_sent',
@@ -160,7 +164,7 @@ wss.on('connection', (ws, req) => {
             }));
           }
           break;
-          
+
         case 'typing':
           const typingPartnerId = activePairs.get(userId);
           if (typingPartnerId) {
@@ -173,7 +177,7 @@ wss.on('connection', (ws, req) => {
             }
           }
           break;
-          
+
         case 'stop_chat':
           disconnectUser(userId);
           ws.send(JSON.stringify({
@@ -181,23 +185,23 @@ wss.on('connection', (ws, req) => {
             message: 'You ended the chat.'
           }));
           break;
-          
+
         case 'new_chat':
           // Disconnect from current chat if any
           disconnectUser(userId);
-          
+
           // Start looking for new match
           waitingUsers.set(userId, {
             ws: ws,
             interests: message.interests || [],
             timestamp: Date.now()
           });
-          
+
           ws.send(JSON.stringify({
             type: 'waiting',
             message: 'Looking for someone to chat with...'
           }));
-          
+
           // Try immediate match
           const newMatchId = findMatch(userId, message.interests || []);
           if (newMatchId) {
@@ -205,7 +209,7 @@ wss.on('connection', (ws, req) => {
             pairUsers(userId, newMatchId);
           }
           break;
-          
+
         default:
           console.log('Unknown message type:', message.type);
       }
@@ -217,19 +221,19 @@ wss.on('connection', (ws, req) => {
       }));
     }
   });
-  
+
   // Handle disconnect
   ws.on('close', () => {
     console.log(`User disconnected: ${userId}`);
     disconnectUser(userId);
   });
-  
+
   // Handle errors
   ws.on('error', (error) => {
     console.error(`WebSocket error for user ${userId}:`, error);
     disconnectUser(userId);
   });
-  
+
   // Send ping every 30 seconds to keep connection alive
   const pingInterval = setInterval(() => {
     if (ws.readyState === 1) {
@@ -238,7 +242,7 @@ wss.on('connection', (ws, req) => {
       clearInterval(pingInterval);
     }
   }, 30000);
-  
+
   ws.on('close', () => {
     clearInterval(pingInterval);
   });
@@ -248,7 +252,7 @@ wss.on('connection', (ws, req) => {
 setInterval(() => {
   const now = Date.now();
   const timeout = 5 * 60 * 1000; // 5 minutes
-  
+
   for (const [userId, userData] of waitingUsers) {
     if (now - userData.timestamp > timeout) {
       const ws = userSockets.get(userId);
