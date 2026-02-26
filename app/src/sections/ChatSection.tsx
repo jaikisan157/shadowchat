@@ -35,14 +35,19 @@ export function ChatSection({
 }: ChatSectionProps) {
   const [inputText, setInputText] = useState('');
   const [newChatCooldown, setNewChatCooldown] = useState(0);
-  const [autoReconnect, setAutoReconnect] = useState(0); // countdown seconds
+  const [autoReconnect, setAutoReconnect] = useState(0);
   const [activeReactionId, setActiveReactionId] = useState<string | null>(null);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [swipeOffset, setSwipeOffset] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const skipTimestampsRef = useRef<number[]>([]);
   const autoReconnectRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const matchStartRef = useRef<number>(0);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const chatAreaRef = useRef<HTMLDivElement>(null);
 
   // Smart cooldown: escalates based on recent skip frequency
   const getSmartCooldown = () => {
@@ -119,16 +124,9 @@ export function ChatSection({
     setAutoReconnect(0);
   }, []);
 
-  // Keyboard shortcuts: N for new chat, Esc to stop
+  // Keyboard shortcut: Esc to stop chat
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger shortcuts when typing in input
-      if (document.activeElement === inputRef.current) return;
-
-      if (e.key === 'n' || e.key === 'N') {
-        e.preventDefault();
-        handleNewChat();
-      }
       if (e.key === 'Escape' && chatState.status === 'matched') {
         e.preventDefault();
         onStopChat();
@@ -136,7 +134,61 @@ export function ChatSection({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleNewChat, chatState.status, onStopChat]);
+  }, [chatState.status, onStopChat]);
+
+  // Track when match starts
+  useEffect(() => {
+    if (chatState.status === 'matched') {
+      matchStartRef.current = Date.now();
+      inputRef.current?.focus();
+    }
+  }, [chatState.status]);
+
+  // Swipe-to-skip: attempt to skip, with confirmation if >20s
+  const trySkip = useCallback(() => {
+    if (newChatCooldown > 0) return;
+    if (chatState.status !== 'matched') return;
+
+    const chatDuration = Date.now() - matchStartRef.current;
+    if (chatDuration > 20000) {
+      // Chatting >20s — ask for confirmation
+      setShowLeaveConfirm(true);
+    } else {
+      // <20s — instant skip
+      handleNewChat();
+    }
+  }, [newChatCooldown, chatState.status, handleNewChat]);
+
+  const confirmLeave = useCallback(() => {
+    setShowLeaveConfirm(false);
+    handleNewChat();
+  }, [handleNewChat]);
+
+  // Swipe gesture handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    setSwipeOffset(0);
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const dx = e.touches[0].clientX - touchStartRef.current.x;
+    const dy = e.touches[0].clientY - touchStartRef.current.y;
+
+    // Only track horizontal swipes (ignore vertical scrolling)
+    if (Math.abs(dx) > Math.abs(dy) && dx < 0) {
+      setSwipeOffset(dx);
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (swipeOffset < -100) {
+      // Swiped far enough left — trigger skip
+      trySkip();
+    }
+    setSwipeOffset(0);
+    touchStartRef.current = null;
+  }, [swipeOffset, trySkip]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -153,13 +205,6 @@ export function ChatSection({
       return () => window.visualViewport?.removeEventListener('resize', handleViewportResize);
     }
   }, []);
-
-  // Focus input when matched
-  useEffect(() => {
-    if (chatState.status === 'matched') {
-      inputRef.current?.focus();
-    }
-  }, [chatState.status]);
 
   const handleSend = useCallback(() => {
     if (inputText.trim() && chatState.status === 'matched') {
@@ -275,8 +320,23 @@ export function ChatSection({
       </header>
 
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col px-2 md:px-[5vw] py-2 md:py-4 min-h-0 pb-safe">
-        <div className="chat-area flex-1 rounded-lg overflow-hidden flex flex-col">
+      <div
+        ref={chatAreaRef}
+        className="flex-1 flex flex-col px-2 md:px-[5vw] py-2 md:py-4 min-h-0 pb-safe"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div
+          className="chat-area flex-1 rounded-lg overflow-hidden flex flex-col transition-transform duration-100"
+          style={{ transform: swipeOffset < -10 ? `translateX(${swipeOffset * 0.3}px)` : 'none', opacity: swipeOffset < -50 ? 0.8 : 1 }}
+        >
+          {/* Swipe hint indicator */}
+          {swipeOffset < -50 && (
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10 font-mono text-xs text-neon-cyan animate-fade-in-up">
+              ← Skip
+            </div>
+          )}
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-3 md:space-y-4">
             {chatState.messages.length === 0 && chatState.status === 'idle' && (
@@ -418,6 +478,30 @@ export function ChatSection({
           </div>
         </div>
       </div>
+
+      {/* Leave confirmation modal */}
+      {showLeaveConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={() => setShowLeaveConfirm(false)}>
+          <div className="bg-dark-card border border-white/10 rounded-xl p-6 max-w-[min(20rem,90vw)] shadow-2xl animate-fade-in-up" onClick={e => e.stopPropagation()}>
+            <p className="font-heading font-semibold text-text-primary text-base mb-2">Leave this chat?</p>
+            <p className="text-text-secondary text-sm mb-5">You've been chatting for a while. Are you sure you want to find someone new?</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLeaveConfirm(false)}
+                className="flex-1 py-2.5 rounded-md border border-white/10 text-text-secondary font-mono text-sm hover:bg-white/5 transition-colors"
+              >
+                Stay
+              </button>
+              <button
+                onClick={confirmLeave}
+                className="flex-1 py-2.5 rounded-md bg-neon-cyan text-black font-mono text-sm font-semibold hover:opacity-90 transition-opacity"
+              >
+                Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
