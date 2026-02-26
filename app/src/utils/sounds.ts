@@ -1,15 +1,46 @@
 // Sound effects using Web Audio API - no files needed
 let audioContext: AudioContext | null = null;
+let audioUnlocked = false;
 
 function getAudioContext(): AudioContext {
     if (!audioContext) {
         audioContext = new AudioContext();
     }
-    // Resume if suspended (browsers require user interaction first)
-    if (audioContext.state === 'suspended') {
-        audioContext.resume();
-    }
     return audioContext;
+}
+
+// Must be called from a user gesture (click/tap) to unlock audio on desktop
+export function initAudio() {
+    try {
+        const ctx = getAudioContext();
+        if (ctx.state === 'suspended') {
+            ctx.resume();
+        }
+        // Play a silent sound to fully unlock
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.01);
+        audioUnlocked = true;
+    } catch {
+        // Audio not supported
+    }
+}
+
+// Auto-unlock on first user interaction
+if (typeof document !== 'undefined') {
+    const unlock = () => {
+        initAudio();
+        document.removeEventListener('click', unlock);
+        document.removeEventListener('touchstart', unlock);
+        document.removeEventListener('keydown', unlock);
+    };
+    document.addEventListener('click', unlock);
+    document.addEventListener('touchstart', unlock);
+    document.addEventListener('keydown', unlock);
 }
 
 function playTone(
@@ -21,6 +52,10 @@ function playTone(
 ) {
     try {
         const ctx = getAudioContext();
+        if (ctx.state === 'suspended') {
+            ctx.resume();
+        }
+
         const oscillator = ctx.createOscillator();
         const gainNode = ctx.createGain();
 
@@ -42,7 +77,7 @@ function playTone(
     }
 }
 
-// Match found - ascending two-note chime
+// Match found - ascending three-note chime
 export function playMatchSound() {
     playTone(523, 0.15, 'sine', 0.25, 0);      // C5
     playTone(659, 0.15, 'sine', 0.25, 0.12);    // E5
