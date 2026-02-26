@@ -1,6 +1,5 @@
 // Sound effects using Web Audio API - no files needed
 let audioContext: AudioContext | null = null;
-let audioUnlocked = false;
 
 function getAudioContext(): AudioContext {
     if (!audioContext) {
@@ -24,7 +23,6 @@ export function initAudio() {
         gain.connect(ctx.destination);
         osc.start();
         osc.stop(ctx.currentTime + 0.01);
-        audioUnlocked = true;
     } catch {
         // Audio not supported
     }
