@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Square, MessageCircle, Users, Smile, Sun, Moon } from 'lucide-react';
+import { Send, Square, MessageCircle, Users, Smile, Sun, Moon, Flag } from 'lucide-react';
 import { EmojiPicker } from '@/components/EmojiPicker';
 import { NetworkIndicator } from '@/components/NetworkIndicator';
 import type { Message } from '@/types/chat';
@@ -183,14 +183,17 @@ export function ChatSection({
   // Skip with confirmation: if chatting > 15s, ask before leaving
   const trySkip = useCallback(() => {
     if (newChatCooldown > 0) return;
-    if (chatState.status !== 'matched') return;
+
+    // If not matched (disconnected/idle/searching), just start new chat directly
+    if (chatState.status !== 'matched') {
+      handleNewChat();
+      return;
+    }
 
     const chatDuration = Date.now() - matchStartRef.current;
     if (chatDuration > 15000) {
-      // Chatting >15s — ask for confirmation
       setShowLeaveConfirm(true);
     } else {
-      // <15s — instant skip
       handleNewChat();
     }
   }, [newChatCooldown, chatState.status, handleNewChat]);
@@ -307,13 +310,13 @@ export function ChatSection({
         </div>
 
         {/* Center Status */}
-        <div className="flex items-center gap-2 md:gap-3">
-          <div className={`w-2 h-2 rounded-full ${chatState.status === 'matched' ? 'bg-neon-green animate-pulse' :
+        <div className="flex items-center gap-1 md:gap-3 min-w-0">
+          <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full shrink-0 ${chatState.status === 'matched' ? 'bg-neon-green animate-pulse' :
             chatState.status === 'searching' ? 'bg-yellow-500 animate-pulse' :
               chatState.status === 'disconnected' || chatState.status === 'error' ? 'bg-red-500' :
                 'bg-text-secondary/50'
             }`} />
-          <span className="font-mono text-[10px] md:text-xs text-text-secondary uppercase tracking-wider">
+          <span className="font-mono text-[9px] md:text-xs text-text-secondary uppercase tracking-wider truncate">
             {getStatusText()}
           </span>
         </div>
@@ -498,6 +501,16 @@ export function ChatSection({
           {/* Input Area */}
           <div className="p-2 md:p-4 border-t border-white/10">
             <div className="flex items-center gap-2 md:gap-3">
+              {/* Flag/Report button */}
+              {chatState.status === 'matched' && (
+                <button
+                  onClick={() => alert('Report feature coming soon!')}
+                  className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-md text-text-secondary/50 hover:text-red-400 hover:bg-red-400/10 transition-all shrink-0"
+                  title="Report user"
+                >
+                  <Flag className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                </button>
+              )}
               <input
                 ref={inputRef}
                 type="text"
