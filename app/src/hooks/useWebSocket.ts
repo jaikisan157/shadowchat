@@ -186,7 +186,8 @@ export function useWebSocket(): {
           partnerId: data.partnerId,
           isTyping: false,
           messages: [
-            ...prev.messages,
+            // Remove the "Looking for someone..." waiting message
+            ...prev.messages.filter(m => !(m.sender === 'system' && m.text.includes('Looking for'))),
             {
               id: generateMessageId(),
               text: data.message,

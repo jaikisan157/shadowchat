@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { Sun, Moon } from 'lucide-react';
 import { HeroSection } from '@/sections/HeroSection';
 import { ChatSection } from '@/sections/ChatSection';
 import { useWebSocket } from '@/hooks/useWebSocket';
@@ -10,6 +11,9 @@ gsap.registerPlugin(ScrollTrigger);
 
 function App() {
   const [showChat, setShowChat] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    return localStorage.getItem('shadowchat_theme') !== 'light';
+  });
   const mainRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
@@ -24,6 +28,19 @@ function App() {
     stopChat,
     newChat
   } = useWebSocket();
+
+  // Apply theme to html element
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.remove('light');
+      localStorage.setItem('shadowchat_theme', 'dark');
+    } else {
+      document.documentElement.classList.add('light');
+      localStorage.setItem('shadowchat_theme', 'light');
+    }
+  }, [isDark]);
+
+  const toggleTheme = useCallback(() => setIsDark(d => !d), []);
 
   // Handle start chat from hero
   const handleStartChat = useCallback(() => {
@@ -76,12 +93,23 @@ function App() {
   }, [chatState.status, stopChat, showChat]);
 
   return (
-    <div ref={mainRef} className="relative bg-black min-h-screen">
+    <div ref={mainRef} className="relative min-h-screen" style={{ background: 'var(--dark-bg)' }}>
       {/* Grain Overlay */}
       <div className="grain-overlay" />
 
       {/* Vignette */}
       <div className="vignette" />
+
+      {/* Theme Toggle */}
+      <button
+        onClick={toggleTheme}
+        className="fixed top-4 right-4 z-[60] w-9 h-9 rounded-full flex items-center justify-center bg-dark-card border border-white/10 hover:border-white/20 transition-all shadow-lg"
+        title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+      >
+        {isDark
+          ? <Sun className="w-4 h-4 text-text-secondary" />
+          : <Moon className="w-4 h-4 text-text-secondary" />}
+      </button>
 
       {/* Hero Section */}
       <div

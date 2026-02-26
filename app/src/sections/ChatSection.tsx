@@ -126,9 +126,9 @@ export function ChatSection({
   };
 
   return (
-    <div className="w-full h-dvh bg-black flex flex-col" style={{ height: '100dvh' }}>
+    <div className="w-full h-dvh flex flex-col" style={{ height: '100dvh', background: 'var(--dark-bg)' }}>
       {/* Header */}
-      <header className="h-14 md:h-16 header-border bg-black flex items-center justify-between px-3 md:px-[5vw] shrink-0">
+      <header className="h-14 md:h-16 header-border flex items-center justify-between px-3 md:px-[5vw] shrink-0" style={{ background: 'var(--dark-bg)' }}>
         {/* Logo */}
         <div className="flex items-center gap-2">
           <span className="font-heading font-semibold text-base md:text-lg text-text-primary">

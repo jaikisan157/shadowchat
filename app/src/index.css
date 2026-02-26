@@ -26,7 +26,7 @@
     --input: 0 0% 8%;
     --ring: 180 100% 50%;
     --radius: 0.5rem;
-    
+
     --neon-cyan: #00F0FF;
     --neon-green: #00FF88;
     --dark-bg: #000000;
@@ -35,6 +35,22 @@
     --dark-input: #141414;
     --text-primary: #F6F6F6;
     --text-secondary: #B8B8B8;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --header-border: rgba(255, 255, 255, 0.12);
+  }
+
+  /* Light mode overrides */
+  .light {
+    --neon-cyan: #0891B2;
+    --neon-green: #059669;
+    --dark-bg: #F8FAFC;
+    --dark-card: #FFFFFF;
+    --dark-bubble: #F1F5F9;
+    --dark-input: #F1F5F9;
+    --text-primary: #0F172A;
+    --text-secondary: #64748B;
+    --border-color: rgba(0, 0, 0, 0.1);
+    --header-border: #E2E8F0;
   }
 }
 
@@ -42,11 +58,11 @@
   * {
     @apply border-border;
   }
-  
+
   html {
     scroll-behavior: smooth;
   }
-  
+
   body {
     @apply bg-black text-foreground antialiased;
     font-family: 'Inter', sans-serif;
@@ -82,10 +98,13 @@
 
 /* Recording Dot Pulse */
 @keyframes pulse-red {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 10px rgba(255, 60, 60, 0.55);
     opacity: 1;
   }
+
   50% {
     box-shadow: 0 0 20px rgba(255, 60, 60, 0.8);
     opacity: 0.8;
@@ -98,10 +117,14 @@
 
 /* Typing Indicator Animation */
 @keyframes typing-bounce {
-  0%, 60%, 100% {
+
+  0%,
+  60%,
+  100% {
     transform: translateY(0);
     opacity: 0.4;
   }
+
   30% {
     transform: translateY(-6px);
     opacity: 1;
@@ -140,16 +163,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #000000;
+  background: var(--dark-bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1A1A1A;
+  background: var(--dark-bubble);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2A2A2A;
+  background: var(--dark-input);
 }
 
 /* Message Bubble Styles */
@@ -157,6 +180,10 @@
   background: var(--neon-cyan);
   color: #000000;
   border-radius: 10px 10px 2px 10px;
+}
+
+.light .message-bubble-user {
+  color: #FFFFFF;
 }
 
 .message-bubble-stranger {
@@ -172,7 +199,8 @@
 }
 
 /* Input Focus */
-input:focus, textarea:focus {
+input:focus,
+textarea:focus {
   outline: none;
   box-shadow: 0 0 0 1px rgba(0, 240, 255, 0.3);
 }
@@ -200,18 +228,18 @@ input:focus, textarea:focus {
   height: 100%;
   pointer-events: none;
   z-index: 1;
-  background: radial-gradient(ellipse at center, transparent 0%, transparent 50%, rgba(0,0,0,0.4) 100%);
+  background: radial-gradient(ellipse at center, transparent 0%, transparent 50%, rgba(0, 0, 0, 0.4) 100%);
 }
 
 /* Chat Area */
 .chat-area {
   background: var(--dark-card);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
 }
 
 /* Header Border */
 .header-border {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid var(--header-border);
 }
 
 /* Animations */
@@ -220,6 +248,7 @@ input:focus, textarea:focus {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -231,6 +260,7 @@ input:focus, textarea:focus {
     opacity: 0;
     transform: translateX(40px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -242,6 +272,7 @@ input:focus, textarea:focus {
     opacity: 0;
     transform: translateX(-40px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -262,7 +293,8 @@ input:focus, textarea:focus {
 
 /* Mobile Viewport Height */
 .h-dvh {
-  height: 100vh; /* fallback */
+  height: 100vh;
+  /* fallback */
   height: 100dvh;
 }
 
@@ -273,6 +305,7 @@ input:focus, textarea:focus {
 
 /* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
