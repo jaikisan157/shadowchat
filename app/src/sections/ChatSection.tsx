@@ -17,6 +17,7 @@ interface ChatSectionProps {
   onSendReaction: (messageId: string, emoji: string) => void;
   onStopChat: () => void;
   onNewChat: () => void;
+  onGoHome: () => void;
   isDark: boolean;
   toggleTheme: () => void;
   connected: boolean;
@@ -29,6 +30,7 @@ export function ChatSection({
   onSendReaction,
   onStopChat,
   onNewChat,
+  onGoHome,
   isDark,
   toggleTheme,
   connected
@@ -303,9 +305,12 @@ export function ChatSection({
       <header className="h-14 md:h-16 header-border flex items-center justify-between px-3 md:px-[5vw] shrink-0" style={{ background: 'var(--dark-bg)' }}>
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <span className="font-heading font-semibold text-base md:text-lg text-text-primary">
+          <button
+            onClick={onGoHome}
+            className="font-heading font-semibold text-base md:text-lg text-text-primary hover:text-neon-cyan transition-colors"
+          >
             ShadowChat
-          </span>
+          </button>
           <NetworkIndicator wsConnected={connected} />
         </div>
 

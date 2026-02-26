@@ -55,6 +55,12 @@ function App() {
     newChat();
   }, [newChat]);
 
+  // Handle going back to hero
+  const handleGoHome = useCallback(() => {
+    stopChat();
+    setShowChat(false);
+  }, [stopChat]);
+
   // Scroll animation setup
   useEffect(() => {
     if (!showChat) return;
@@ -112,6 +118,7 @@ function App() {
             onSendReaction={sendReaction}
             onStopChat={stopChat}
             onNewChat={handleNewChat}
+            onGoHome={handleGoHome}
             isDark={isDark}
             toggleTheme={toggleTheme}
             connected={connected}
