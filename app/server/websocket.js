@@ -208,6 +208,20 @@ wss.on('connection', (ws, req) => {
           }
           break;
 
+        case 'reaction':
+          const reactionPartnerId = activePairs.get(userId);
+          if (reactionPartnerId) {
+            const reactionPartnerWs = userSockets.get(reactionPartnerId);
+            if (reactionPartnerWs && reactionPartnerWs.readyState === 1) {
+              reactionPartnerWs.send(JSON.stringify({
+                type: 'reaction_received',
+                messageId: message.messageId,
+                emoji: message.emoji
+              }));
+            }
+          }
+          break;
+
         case 'stop_chat':
           endChat(userId);
           ws.send(JSON.stringify({

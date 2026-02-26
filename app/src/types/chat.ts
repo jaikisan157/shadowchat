@@ -3,6 +3,7 @@ export interface Message {
   text: string;
   sender: 'user' | 'stranger' | 'system';
   timestamp: number;
+  reactions?: { emoji: string; from: 'user' | 'stranger' }[];
 }
 
 export interface ChatState {
@@ -26,6 +27,8 @@ export type WebSocketMessage =
   | { type: 'search_timeout'; message: string }
   | { type: 'typing'; isTyping: boolean }
   | { type: 'online_count'; count: number }
+  | { type: 'reaction'; messageId: string; emoji: string }
+  | { type: 'reaction_received'; messageId: string; emoji: string }
   | { type: 'error'; message: string };
 
 export interface UseWebSocketReturn {
@@ -35,6 +38,7 @@ export interface UseWebSocketReturn {
   cancelSearch: () => void;
   sendMessage: (text: string) => void;
   sendTyping: (isTyping: boolean) => void;
+  sendReaction: (messageId: string, emoji: string) => void;
   stopChat: () => void;
   newChat: (interests?: string[]) => void;
 }

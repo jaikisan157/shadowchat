@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Square, MessageCircle, Users } from 'lucide-react';
+import { Send, Square, MessageCircle, Users, Smile } from 'lucide-react';
+import { EmojiPicker } from '@/components/EmojiPicker';
 import type { Message } from '@/types/chat';
 
 interface ChatSectionProps {
@@ -12,6 +13,7 @@ interface ChatSectionProps {
   };
   onSendMessage: (text: string) => void;
   onSendTyping: (isTyping: boolean) => void;
+  onSendReaction: (messageId: string, emoji: string) => void;
   onStopChat: () => void;
   onNewChat: () => void;
 }
@@ -20,11 +22,14 @@ export function ChatSection({
   chatState,
   onSendMessage,
   onSendTyping,
+  onSendReaction,
   onStopChat,
   onNewChat
 }: ChatSectionProps) {
   const [inputText, setInputText] = useState('');
   const [newChatCooldown, setNewChatCooldown] = useState(0);
+  const [activeReactionId, setActiveReactionId] = useState<string | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -148,8 +153,8 @@ export function ChatSection({
             onClick={handleNewChat}
             disabled={newChatCooldown > 0}
             className={`flex items-center gap-1 md:gap-2 transition-colors ${newChatCooldown > 0
-                ? 'text-text-secondary/40 cursor-not-allowed'
-                : 'text-neon-cyan hover:text-neon-cyan/80'
+              ? 'text-text-secondary/40 cursor-not-allowed'
+              : 'text-neon-cyan hover:text-neon-cyan/80'
               }`}
           >
             <MessageCircle className="w-4 h-4" />
@@ -189,17 +194,71 @@ export function ChatSection({
                   </span>
                 )}
 
-                {/* Bubble */}
-                <div
-                  className={`max-w-[80vw] md:max-w-[56vw] px-3 md:px-4 py-2 md:py-3 text-sm md:text-base leading-relaxed ${message.sender === 'user'
-                    ? 'message-bubble-user'
-                    : message.sender === 'stranger'
-                      ? 'message-bubble-stranger'
-                      : 'message-bubble-system text-center'
-                    }`}
-                >
-                  {message.text}
+                {/* Bubble + Reaction Trigger */}
+                <div className="relative group">
+                  <div
+                    className={`max-w-[80vw] md:max-w-[56vw] px-3 md:px-4 py-2 md:py-3 text-sm md:text-base leading-relaxed ${message.sender === 'user'
+                      ? 'message-bubble-user'
+                      : message.sender === 'stranger'
+                        ? 'message-bubble-stranger'
+                        : 'message-bubble-system text-center'
+                      }`}
+                    onTouchStart={() => {
+                      if (message.sender === 'system') return;
+                      longPressTimerRef.current = setTimeout(() => {
+                        setActiveReactionId(message.id);
+                      }, 500);
+                    }}
+                    onTouchEnd={() => {
+                      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+                    }}
+                    onTouchMove={() => {
+                      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+                    }}
+                  >
+                    {message.text}
+                  </div>
+
+                  {/* Desktop: Hover reaction button */}
+                  {message.sender !== 'system' && chatState.status === 'matched' && (
+                    <button
+                      onClick={() => setActiveReactionId(activeReactionId === message.id ? null : message.id)}
+                      className={`absolute ${message.sender === 'user' ? '-left-8' : '-right-8'} top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center w-6 h-6 rounded-full bg-dark-input hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100`}
+                    >
+                      <Smile className="w-3.5 h-3.5 text-text-secondary" />
+                    </button>
+                  )}
+
+                  {/* Emoji Picker */}
+                  {activeReactionId === message.id && (
+                    <div className={`absolute ${message.sender === 'user' ? 'right-0' : 'left-0'} z-50`}>
+                      <EmojiPicker
+                        onSelect={(emoji) => onSendReaction(message.id, emoji)}
+                        onClose={() => setActiveReactionId(null)}
+                        position="above"
+                      />
+                    </div>
+                  )}
                 </div>
+
+                {/* Reactions Display */}
+                {message.reactions && message.reactions.length > 0 && (
+                  <div className={`flex flex-wrap gap-1 mt-1 px-1 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    {Object.entries(
+                      message.reactions.reduce((acc, r) => {
+                        acc[r.emoji] = (acc[r.emoji] || 0) + 1;
+                        return acc;
+                      }, {} as Record<string, number>)
+                    ).map(([emoji, count]) => (
+                      <span
+                        key={emoji}
+                        className="inline-flex items-center gap-0.5 bg-dark-input border border-white/10 rounded-full px-1.5 py-0.5 text-xs"
+                      >
+                        {emoji}{count > 1 && <span className="text-[10px] text-text-secondary">{count}</span>}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
 

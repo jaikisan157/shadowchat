@@ -20,6 +20,7 @@ function App() {
     findMatch,
     sendMessage,
     sendTyping,
+    sendReaction,
     stopChat,
     newChat
   } = useWebSocket();
@@ -100,6 +101,7 @@ function App() {
             chatState={chatState}
             onSendMessage={sendMessage}
             onSendTyping={sendTyping}
+            onSendReaction={sendReaction}
             onStopChat={stopChat}
             onNewChat={handleNewChat}
           />

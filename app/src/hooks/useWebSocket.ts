@@ -18,6 +18,7 @@ export function useWebSocket(): {
   cancelSearch: () => void;
   sendMessage: (text: string) => void;
   sendTyping: (isTyping: boolean) => void;
+  sendReaction: (messageId: string, emoji: string) => void;
   stopChat: () => void;
   newChat: (interests?: string[]) => void;
 } {
@@ -296,6 +297,23 @@ export function useWebSocket(): {
         }));
         break;
 
+      case 'reaction_received':
+        setChatState(prev => ({
+          ...prev,
+          messages: prev.messages.map(msg =>
+            msg.id === data.messageId
+              ? {
+                ...msg,
+                reactions: [
+                  ...(msg.reactions || []),
+                  { emoji: data.emoji, from: 'stranger' as const },
+                ],
+              }
+              : msg
+          ),
+        }));
+        break;
+
       case 'error':
         setChatState(prev => ({
           ...prev,
@@ -407,6 +425,31 @@ export function useWebSocket(): {
     };
   }, [connect]);
 
+  const sendReaction = useCallback((messageId: string, emoji: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'reaction',
+        messageId,
+        emoji,
+      }));
+      // Add to local state immediately
+      setChatState(prev => ({
+        ...prev,
+        messages: prev.messages.map(msg =>
+          msg.id === messageId
+            ? {
+              ...msg,
+              reactions: [
+                ...(msg.reactions || []),
+                { emoji, from: 'user' as const },
+              ],
+            }
+            : msg
+        ),
+      }));
+    }
+  }, []);
+
   return {
     connected,
     chatState,
@@ -414,6 +457,7 @@ export function useWebSocket(): {
     cancelSearch,
     sendMessage,
     sendTyping,
+    sendReaction,
     stopChat,
     newChat,
   };
