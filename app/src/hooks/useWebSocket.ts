@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { ChatState, WebSocketMessage } from '@/types/chat';
+import { playMatchSound, playMessageSound, playDisconnectSound } from '@/utils/sounds';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
 
@@ -159,6 +160,7 @@ export function useWebSocket(): {
         break;
 
       case 'matched':
+        playMatchSound();
         setChatState(prev => ({
           ...prev,
           status: 'matched',
@@ -179,6 +181,7 @@ export function useWebSocket(): {
       case 'message':
         // If we receive a message, we're definitely in an active chat
         // Restore 'matched' status if it was accidentally changed
+        playMessageSound();
         setChatState(prev => ({
           ...prev,
           status: 'matched',
@@ -211,6 +214,7 @@ export function useWebSocket(): {
         break;
 
       case 'partner_disconnected':
+        playDisconnectSound();
         setChatState(prev => ({
           ...prev,
           status: 'disconnected',
