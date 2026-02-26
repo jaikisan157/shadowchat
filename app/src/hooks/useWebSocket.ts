@@ -4,6 +4,16 @@ import { playMatchSound, playMessageSound, playDisconnectSound } from '@/utils/s
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
 
+// Generate a persistent browser ID for this device
+function getBrowserId(): string {
+  let id = localStorage.getItem('shadowchat_browser_id');
+  if (!id) {
+    id = 'b-' + Date.now() + '-' + Math.random().toString(36).substring(2, 10);
+    localStorage.setItem('shadowchat_browser_id', id);
+  }
+  return id;
+}
+
 // Unique ID generator to avoid duplicate keys
 let messageIdCounter = 0;
 function generateMessageId(): string {
@@ -35,8 +45,12 @@ export function useWebSocket(): {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleMessageRef = useRef<(data: WebSocketMessage) => void>(() => { });
+  const isDuplicateTabRef = useRef(false);
 
   const connect = useCallback(() => {
+    // Don't reconnect if this tab was kicked as duplicate
+    if (isDuplicateTabRef.current) return;
+
     // Close existing connection if any
     if (wsRef.current) {
       wsRef.current.onclose = null; // prevent reconnect loop
@@ -45,7 +59,8 @@ export function useWebSocket(): {
     }
 
     try {
-      const ws = new WebSocket(WS_URL);
+      const browserId = getBrowserId();
+      const ws = new WebSocket(`${WS_URL}?browserId=${browserId}`);
 
       ws.onopen = () => {
         console.log('WebSocket connected');
@@ -68,6 +83,9 @@ export function useWebSocket(): {
       ws.onclose = () => {
         console.log('WebSocket disconnected');
         setConnected(false);
+
+        // Don't show disconnect or reconnect if kicked as duplicate
+        if (isDuplicateTabRef.current) return;
 
         // If we were in a chat or searching, reset the state
         // because the server has lost our pairing
@@ -312,6 +330,24 @@ export function useWebSocket(): {
               }
               : msg
           ),
+        }));
+        break;
+
+      case 'duplicate_tab':
+        // This tab was replaced by a new tab — stop reconnecting
+        isDuplicateTabRef.current = true;
+        setChatState(prev => ({
+          ...prev,
+          status: 'error',
+          errorMessage: data.message,
+          messages: [
+            {
+              id: generateMessageId(),
+              text: '⚠️ ' + data.message,
+              sender: 'system',
+              timestamp: Date.now(),
+            },
+          ],
         }));
         break;
 

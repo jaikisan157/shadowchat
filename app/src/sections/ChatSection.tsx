@@ -50,10 +50,21 @@ export function ChatSection({
     }, 1000);
   }, [newChatCooldown, onNewChat]);
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatState.messages, chatState.isTyping]);
+
+  // Scroll to bottom when keyboard opens on mobile (visualViewport resize)
+  useEffect(() => {
+    const handleViewportResize = () => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
+    };
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportResize);
+      return () => window.visualViewport?.removeEventListener('resize', handleViewportResize);
+    }
+  }, []);
 
   // Focus input when matched
   useEffect(() => {

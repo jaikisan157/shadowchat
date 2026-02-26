@@ -22,6 +22,7 @@ const waitingUsers = new Map(); // userId -> { ws, interests }
 const activePairs = new Map(); // userId -> partnerId
 const userSockets = new Map(); // userId -> ws
 const lastActivity = new Map(); // userId -> timestamp
+const browserSockets = new Map(); // browserId -> userId (one per browser tab)
 
 const IDLE_TIMEOUT = 3 * 60 * 1000; // 3 minutes
 
@@ -114,7 +115,33 @@ function broadcastOnlineCount() {
 // Handle WebSocket connections
 wss.on('connection', (ws, req) => {
   const userId = generateUserId();
+
+  // Parse browserId from query string
+  const url = new URL(req.url, 'http://localhost');
+  const browserId = url.searchParams.get('browserId');
+
+  // Kick existing tab if same browser already connected
+  if (browserId && browserSockets.has(browserId)) {
+    const oldUserId = browserSockets.get(browserId);
+    const oldWs = userSockets.get(oldUserId);
+    if (oldWs && oldWs.readyState === 1) {
+      console.log(`Duplicate tab detected for browserId: ${browserId}, closing old tab`);
+      oldWs.send(JSON.stringify({
+        type: 'duplicate_tab',
+        message: 'You opened ShadowChat in another tab. This tab has been disconnected.'
+      }));
+      oldWs.close();
+    }
+    // Clean up old session
+    endChat(oldUserId);
+    waitingUsers.delete(oldUserId);
+    userSockets.delete(oldUserId);
+    lastActivity.delete(oldUserId);
+  }
+
+  // Register this connection
   userSockets.set(userId, ws);
+  if (browserId) browserSockets.set(browserId, userId);
 
   console.log(`User connected: ${userId}, Total connections: ${wss.clients.size}`);
 
@@ -273,6 +300,10 @@ wss.on('connection', (ws, req) => {
   // Handle disconnect
   ws.on('close', () => {
     console.log(`User disconnected: ${userId}`);
+    // Clean up browserId mapping if it still points to this user
+    if (browserId && browserSockets.get(browserId) === userId) {
+      browserSockets.delete(browserId);
+    }
     // Notify everyone about updated count (after a short delay so wss.clients is updated)
     setTimeout(() => broadcastOnlineCount(), 100);
     disconnectUser(userId);

@@ -29,6 +29,7 @@ export type WebSocketMessage =
   | { type: 'online_count'; count: number }
   | { type: 'reaction'; messageId: string; emoji: string }
   | { type: 'reaction_received'; messageId: string; emoji: string }
+  | { type: 'duplicate_tab'; message: string }
   | { type: 'error'; message: string };
 
 export interface UseWebSocketReturn {
