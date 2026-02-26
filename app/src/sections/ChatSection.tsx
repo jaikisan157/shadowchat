@@ -24,9 +24,27 @@ export function ChatSection({
   onNewChat
 }: ChatSectionProps) {
   const [inputText, setInputText] = useState('');
+  const [newChatCooldown, setNewChatCooldown] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Handle New Chat with 5s cooldown
+  const handleNewChat = useCallback(() => {
+    if (newChatCooldown > 0) return;
+    onNewChat();
+    setNewChatCooldown(5);
+    cooldownRef.current = setInterval(() => {
+      setNewChatCooldown(prev => {
+        if (prev <= 1) {
+          if (cooldownRef.current) clearInterval(cooldownRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [newChatCooldown, onNewChat]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -106,9 +124,9 @@ export function ChatSection({
         {/* Center Status */}
         <div className="flex items-center gap-2 md:gap-3">
           <div className={`w-2 h-2 rounded-full ${chatState.status === 'matched' ? 'bg-neon-green animate-pulse' :
-              chatState.status === 'searching' ? 'bg-yellow-500 animate-pulse' :
-                chatState.status === 'disconnected' || chatState.status === 'error' ? 'bg-red-500' :
-                  'bg-text-secondary/50'
+            chatState.status === 'searching' ? 'bg-yellow-500 animate-pulse' :
+              chatState.status === 'disconnected' || chatState.status === 'error' ? 'bg-red-500' :
+                'bg-text-secondary/50'
             }`} />
           <span className="font-mono text-[10px] md:text-xs text-text-secondary uppercase tracking-wider">
             {getStatusText()}
@@ -127,11 +145,17 @@ export function ChatSection({
             </button>
           )}
           <button
-            onClick={onNewChat}
-            className="flex items-center gap-1 md:gap-2 text-neon-cyan hover:text-neon-cyan/80 transition-colors"
+            onClick={handleNewChat}
+            disabled={newChatCooldown > 0}
+            className={`flex items-center gap-1 md:gap-2 transition-colors ${newChatCooldown > 0
+                ? 'text-text-secondary/40 cursor-not-allowed'
+                : 'text-neon-cyan hover:text-neon-cyan/80'
+              }`}
           >
             <MessageCircle className="w-4 h-4" />
-            <span className="font-mono text-xs md:text-sm">New</span>
+            <span className="font-mono text-xs md:text-sm">
+              {newChatCooldown > 0 ? `New (${newChatCooldown}s)` : 'New'}
+            </span>
           </button>
         </div>
       </header>
