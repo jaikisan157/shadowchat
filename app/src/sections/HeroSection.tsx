@@ -88,14 +88,14 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, int
       style={{ background: 'var(--dark-bg)' }}
     >
       {/* Logo */}
-      <div className="absolute left-[5vw] top-[4vh]">
+      <div className="absolute left-[5vw] top-[3vh]">
         <span className="font-heading font-semibold text-lg text-text-primary tracking-tight">
           ShadowChat
         </span>
       </div>
 
       {/* Theme Toggle */}
-      <div className="absolute right-[5vw] top-[3.5vh]">
+      <div className="absolute right-[5vw] top-[2.5vh]">
         <button
           onClick={toggleTheme}
           className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-all border border-white/10"
@@ -107,27 +107,46 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, int
         </button>
       </div>
 
-      {/* Main Content */}
-      <div className="pl-[5vw] pr-[5vw]">
-        <div ref={headlineRef} className="mb-6 md:mb-8">
-          <h1 className="font-heading font-bold uppercase tracking-tight leading-[0.95]"
-            style={{ fontSize: 'clamp(44px, 6vw, 84px)' }}>
-            <div className="headline-line text-text-primary">TALK</div>
-            <div className="headline-line text-text-primary">TO</div>
-            <div className="headline-line text-neon-cyan neon-text">STRANGERS</div>
-          </h1>
+      {/* Main Content — two-column on desktop */}
+      <div className="pl-[5vw] pr-[5vw] flex flex-col md:flex-row md:items-center md:gap-[4vw]">
+        {/* Left column: headline + subhead + CTA */}
+        <div className="flex-shrink-0 md:max-w-[45%]">
+          <div ref={headlineRef} className="mb-3 md:mb-5">
+            <h1 className="font-heading font-bold uppercase tracking-tight leading-[0.92]"
+              style={{ fontSize: 'clamp(36px, 5vw, 72px)' }}>
+              <div className="headline-line text-text-primary">TALK</div>
+              <div className="headline-line text-text-primary">TO</div>
+              <div className="headline-line text-neon-cyan neon-text">STRANGERS</div>
+            </h1>
+          </div>
+
+          <p
+            ref={subheadRef}
+            className="text-text-secondary text-xs md:text-sm max-w-sm mb-4 md:mb-5 leading-relaxed"
+          >
+            Anonymous, one-on-one, no accounts. Pick your interests to find like-minded people.
+          </p>
+
+          {/* CTA Button */}
+          <button
+            ref={ctaRef}
+            onClick={() => onStartChat(selectedInterests)}
+            className="btn-neon bg-neon-cyan text-black font-heading font-semibold text-sm md:text-base px-8 py-3 rounded-md mb-2 neon-glow hover:shadow-neon-strong transition-all"
+            style={{ minWidth: '180px' }}
+          >
+            {selectedInterests.length > 0 ? `Start Chat (${selectedInterests.length})` : 'Start Chat'}
+          </button>
+
+          <div>
+            <span ref={microRef} className="font-mono text-[10px] text-text-secondary/55">
+              Or press Space
+            </span>
+          </div>
         </div>
 
-        <p
-          ref={subheadRef}
-          className="text-text-secondary text-sm md:text-lg max-w-md md:max-w-[34vw] mb-5 md:mb-8 leading-relaxed"
-        >
-          Anonymous, one-on-one, no accounts. Pick your interests to find like-minded people.
-        </p>
-
-        {/* Interest Tags */}
-        <div className="interest-section mb-5 md:mb-6 max-w-lg md:max-w-[40vw]">
-          <p className="font-mono text-[10px] md:text-xs text-text-secondary/60 mb-2 uppercase tracking-wider">
+        {/* Right column: Interest picker */}
+        <div className="interest-section mt-5 md:mt-0 md:max-w-[420px]">
+          <p className="font-mono text-[10px] text-text-secondary/60 mb-1.5 uppercase tracking-wider">
             Pick or type interests · optional · max 5
           </p>
           {/* Custom interest input */}
@@ -139,26 +158,26 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, int
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); addCustomInterest(); } }}
               placeholder="Type your own..."
               maxLength={20}
-              className="flex-1 bg-white/5 border border-white/10 rounded-full px-3 py-1 md:py-1.5 font-mono text-[10px] md:text-xs text-text-primary placeholder:text-text-secondary/40 focus:border-neon-cyan/50 focus:outline-none transition-colors"
+              className="flex-1 bg-white/5 border border-white/10 rounded-full px-3 py-1 font-mono text-[10px] text-text-primary placeholder:text-text-secondary/40 focus:border-neon-cyan/50 focus:outline-none transition-colors"
             />
             {customInput.trim() && (
               <button
                 onClick={addCustomInterest}
-                className="px-3 py-1 rounded-full font-mono text-[10px] md:text-xs bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/50 hover:bg-neon-cyan/30 transition-colors"
+                className="px-3 py-1 rounded-full font-mono text-[10px] bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/50 hover:bg-neon-cyan/30 transition-colors"
               >
                 Add
               </button>
             )}
           </div>
-          <div className="flex flex-wrap gap-1.5 md:gap-2">
-            {/* Show selected custom interests first */}
+          <div className="flex flex-wrap gap-1.5">
+            {/* Custom interests */}
             {selectedInterests
               .filter(i => !interestStats.some(s => s.name === i))
               .map(interest => (
                 <button
                   key={interest}
                   onClick={() => toggleInterest(interest)}
-                  className="px-2.5 py-1 md:px-3 md:py-1.5 rounded-full font-mono text-[10px] md:text-xs transition-all border bg-neon-cyan/20 text-neon-cyan border-neon-cyan/50 shadow-[0_0_8px_rgba(0,255,200,0.15)]"
+                  className="px-2 py-0.5 rounded-full font-mono text-[10px] transition-all border bg-neon-cyan/20 text-neon-cyan border-neon-cyan/50 shadow-[0_0_8px_rgba(0,255,200,0.15)]"
                 >
                   {interest} ✕
                 </button>
@@ -170,7 +189,7 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, int
                 <button
                   key={interest.name}
                   onClick={() => toggleInterest(interest.name)}
-                  className={`px-2.5 py-1 md:px-3 md:py-1.5 rounded-full font-mono text-[10px] md:text-xs transition-all border ${isSelected
+                  className={`px-2 py-0.5 rounded-full font-mono text-[10px] transition-all border ${isSelected
                     ? 'bg-neon-cyan/20 text-neon-cyan border-neon-cyan/50 shadow-[0_0_8px_rgba(0,255,200,0.15)]'
                     : 'bg-white/5 text-text-secondary border-white/10 hover:border-white/25 hover:bg-white/10'
                     }`}
@@ -186,22 +205,6 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, int
             })}
           </div>
         </div>
-
-        {/* CTA Button */}
-        <button
-          ref={ctaRef}
-          onClick={() => onStartChat(selectedInterests)}
-          className="btn-neon bg-neon-cyan text-black font-heading font-semibold text-lg px-10 py-4 rounded-md mb-4 neon-glow hover:shadow-neon-strong transition-all"
-          style={{ minWidth: '220px' }}
-        >
-          {selectedInterests.length > 0 ? `Start Chat (${selectedInterests.length})` : 'Start Chat'}
-        </button>
-
-        <div>
-          <span ref={microRef} className="font-mono text-xs text-text-secondary/55">
-            Or press Space
-          </span>
-        </div>
       </div>
 
       {/* Decorative Chevrons */}
@@ -215,18 +218,18 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, int
       </div>
 
       {/* Online Counter */}
-      <div className="absolute bottom-[4vh] right-[5vw] flex items-center gap-4">
+      <div className="absolute bottom-[3vh] right-[5vw] flex items-center gap-4">
         {onlineCount > 0 && (
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-neon-cyan animate-pulse" />
-            <span className="font-mono text-xs text-neon-cyan">
+            <span className="font-mono text-[10px] text-neon-cyan">
               {onlineCount.toLocaleString()} online
             </span>
           </div>
         )}
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
-          <span className="font-mono text-xs text-text-secondary">
+          <span className="font-mono text-[10px] text-text-secondary">
             Live server connected
           </span>
         </div>
