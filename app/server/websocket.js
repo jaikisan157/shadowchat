@@ -90,22 +90,31 @@ function findMatch(userId, interests = []) {
       if (hasCommon) return waitingId;
     }
 
-    // If still within 15s, DON'T fallback — keep waiting for interest match
+    // If still within 15s, keep waiting for interest match
     if (userWaitTime < INTEREST_MATCH_TIMEOUT) {
       return null;
     }
   }
 
-  // Pass 2: Fallback — match with anyone (user has no interests OR waited >15s)
+  // Pass 2: No interests OR timed out — match with anyone available
   for (const [waitingId, waitingUser] of waitingUsers) {
     if (waitingId === userId) continue;
 
-    // The other user also needs to have timed out if they have interests
-    if (waitingUser.interests.length > 0 && Date.now() - waitingUser.timestamp < INTEREST_MATCH_TIMEOUT) {
-      continue; // They're still waiting for interest match, skip them
+    // If the OTHER user has interests and is still in strict mode, skip them
+    // (let them keep waiting for their interest match)
+    if (waitingUser.interests.length > 0) {
+      const otherWaitTime = Date.now() - waitingUser.timestamp;
+      if (otherWaitTime < INTEREST_MATCH_TIMEOUT) continue;
     }
 
     return waitingId;
+  }
+
+  // Pass 3: If we have no interests, match with ANYONE regardless of their timer
+  if (!hasInterests) {
+    for (const [waitingId] of waitingUsers) {
+      if (waitingId !== userId) return waitingId;
+    }
   }
 
   return null;
