@@ -92,11 +92,11 @@ export function useWebSocket(): {
           return prev;
         });
 
-        // Attempt to reconnect after 3 seconds
+        // Attempt to reconnect quickly (1.5s)
         reconnectTimeoutRef.current = setTimeout(() => {
           console.log('Attempting to reconnect...');
           connect();
-        }, 3000);
+        }, 1500);
       };
 
       ws.onerror = (error) => {

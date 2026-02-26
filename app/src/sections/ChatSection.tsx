@@ -219,14 +219,12 @@ export function ChatSection({
                     )}
                   </div>
 
-                  {/* Emoji Picker */}
+                  {/* Emoji Picker (fixed overlay) */}
                   {activeReactionId === message.id && (
-                    <div className={`absolute ${message.sender === 'user' ? 'right-0' : 'left-0'} z-50`}>
-                      <EmojiPicker
-                        onSelect={(emoji) => onSendReaction(message.id, emoji)}
-                        onClose={() => setActiveReactionId(null)}
-                      />
-                    </div>
+                    <EmojiPicker
+                      onSelect={(emoji) => onSendReaction(message.id, emoji)}
+                      onClose={() => setActiveReactionId(null)}
+                    />
                   )}
                 </div>
 
