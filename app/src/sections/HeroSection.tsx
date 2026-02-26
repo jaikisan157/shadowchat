@@ -14,6 +14,7 @@ interface HeroSectionProps {
 export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, interestStats }: HeroSectionProps) {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [customInput, setCustomInput] = useState('');
+  const [showMore, setShowMore] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const headlineRef = useRef<HTMLDivElement>(null);
   const subheadRef = useRef<HTMLParagraphElement>(null);
@@ -142,6 +143,42 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, int
               Or press Space
             </span>
           </div>
+
+          {/* Explore More */}
+          <button
+            onClick={() => setShowMore(prev => !prev)}
+            className="mt-3 font-mono text-[10px] text-text-secondary/50 hover:text-neon-cyan transition-colors flex items-center gap-1"
+          >
+            <span className={`transition-transform inline-block ${showMore ? 'rotate-90' : ''}`}>▶</span>
+            {showMore ? 'Hide' : 'Explore more features'}
+          </button>
+
+          {showMore && (
+            <div className="mt-2 grid grid-cols-2 gap-1.5 max-w-[320px] animate-fade-in-up">
+              {[
+                { icon: '📹', name: 'Video Chat', desc: 'Face-to-face' },
+                { icon: '🎙️', name: 'Voice Rooms', desc: 'Audio only' },
+                { icon: '👥', name: 'Group Chat', desc: 'Up to 5 people' },
+                { icon: '🪪', name: 'Profile Cards', desc: 'Share your vibe' },
+                { icon: '🏆', name: 'Leaderboard', desc: 'Top chatters' },
+                { icon: '💎', name: 'Premium Filters', desc: 'Gender, location' },
+              ].map(f => (
+                <div
+                  key={f.name}
+                  className="relative px-2.5 py-2 rounded-lg border border-white/5 bg-white/[0.02] opacity-40 cursor-not-allowed select-none"
+                >
+                  <div className="font-mono text-[10px] text-text-secondary flex items-center gap-1.5">
+                    <span>{f.icon}</span>
+                    <span>{f.name}</span>
+                  </div>
+                  <div className="font-mono text-[8px] text-text-secondary/30 mt-0.5 ml-5">{f.desc}</div>
+                  <div className="absolute top-1 right-1.5 font-mono text-[7px] text-text-secondary/30 bg-white/5 px-1 py-0.5 rounded">
+                    🔒 Soon
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Right column: Interest picker */}
