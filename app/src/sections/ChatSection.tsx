@@ -35,27 +35,108 @@ export function ChatSection({
 }: ChatSectionProps) {
   const [inputText, setInputText] = useState('');
   const [newChatCooldown, setNewChatCooldown] = useState(0);
+  const [autoReconnect, setAutoReconnect] = useState(0); // countdown seconds
   const [activeReactionId, setActiveReactionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const skipTimestampsRef = useRef<number[]>([]);
+  const autoReconnectRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Handle New Chat with 5s cooldown
+  // Smart cooldown: escalates based on recent skip frequency
+  const getSmartCooldown = () => {
+    const now = Date.now();
+    // Count skips in the last 10 seconds
+    skipTimestampsRef.current = skipTimestampsRef.current.filter(t => now - t < 10000);
+    const recentSkips = skipTimestampsRef.current.length;
+
+    if (recentSkips === 0) return 0; // first skip → instant
+    if (recentSkips === 1) return 3; // second skip within 10s → 3s
+    return 5; // third+ skip → 5s
+  };
+
+  // Handle New Chat with smart cooldown
   const handleNewChat = useCallback(() => {
     if (newChatCooldown > 0) return;
+
+    // Cancel auto-reconnect if running
+    if (autoReconnectRef.current) {
+      clearInterval(autoReconnectRef.current);
+      autoReconnectRef.current = null;
+      setAutoReconnect(0);
+    }
+
     onNewChat();
-    setNewChatCooldown(5);
-    cooldownRef.current = setInterval(() => {
-      setNewChatCooldown(prev => {
-        if (prev <= 1) {
-          if (cooldownRef.current) clearInterval(cooldownRef.current);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    skipTimestampsRef.current.push(Date.now());
+
+    const cooldown = getSmartCooldown();
+    if (cooldown > 0) {
+      setNewChatCooldown(cooldown);
+      cooldownRef.current = setInterval(() => {
+        setNewChatCooldown(prev => {
+          if (prev <= 1) {
+            if (cooldownRef.current) clearInterval(cooldownRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
   }, [newChatCooldown, onNewChat]);
+
+  // Auto-reconnect countdown when partner disconnects
+  useEffect(() => {
+    if (chatState.status === 'disconnected') {
+      setAutoReconnect(3);
+      autoReconnectRef.current = setInterval(() => {
+        setAutoReconnect(prev => {
+          if (prev <= 1) {
+            if (autoReconnectRef.current) clearInterval(autoReconnectRef.current);
+            autoReconnectRef.current = null;
+            // Auto-trigger new chat
+            onNewChat();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => {
+        if (autoReconnectRef.current) {
+          clearInterval(autoReconnectRef.current);
+          autoReconnectRef.current = null;
+        }
+      };
+    }
+  }, [chatState.status, onNewChat]);
+
+  const cancelAutoReconnect = useCallback(() => {
+    if (autoReconnectRef.current) {
+      clearInterval(autoReconnectRef.current);
+      autoReconnectRef.current = null;
+    }
+    setAutoReconnect(0);
+  }, []);
+
+  // Keyboard shortcuts: N for new chat, Esc to stop
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts when typing in input
+      if (document.activeElement === inputRef.current) return;
+
+      if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        handleNewChat();
+      }
+      if (e.key === 'Escape' && chatState.status === 'matched') {
+        e.preventDefault();
+        onStopChat();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleNewChat, chatState.status, onStopChat]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -283,6 +364,23 @@ export function ChatSection({
                   <span className="w-2 h-2 rounded-full bg-neon-cyan typing-dot" />
                   <span className="w-2 h-2 rounded-full bg-neon-cyan typing-dot" />
                   <span className="w-2 h-2 rounded-full bg-neon-cyan typing-dot" />
+                </div>
+              </div>
+            )}
+
+            {/* Auto-reconnect countdown */}
+            {autoReconnect > 0 && (
+              <div className="flex items-center justify-center gap-3 animate-fade-in-up">
+                <div className="bg-dark-input border border-white/10 rounded-lg px-4 py-2 flex items-center gap-3">
+                  <span className="font-mono text-xs text-text-secondary">
+                    Finding someone new in {autoReconnect}…
+                  </span>
+                  <button
+                    onClick={cancelAutoReconnect}
+                    className="font-mono text-xs text-red-400 hover:text-red-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
             )}

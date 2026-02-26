@@ -78,19 +78,6 @@ function App() {
     return () => ctx.revert();
   }, [showChat]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Escape to stop chat (only when in chat view and matched)
-      if (e.key === 'Escape' && showChat && chatState.status === 'matched') {
-        stopChat();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [chatState.status, stopChat, showChat]);
-
   return (
     <div ref={mainRef} className="relative min-h-screen" style={{ background: 'var(--dark-bg)' }}>
       {/* Grain Overlay */}
