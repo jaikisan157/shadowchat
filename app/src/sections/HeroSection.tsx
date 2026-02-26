@@ -207,7 +207,7 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, int
       {/* Decorative Chevrons */}
       <div
         ref={chevronsRef}
-        className="absolute right-[6vw] top-1/2 -translate-y-1/2 flex flex-col gap-2"
+        className="absolute right-[6vw] top-1/2 -translate-y-1/2 hidden md:flex flex-col gap-2"
       >
         <ChevronRight className="chevron-item w-8 h-8 stroke-[2]" style={{ color: 'var(--text-secondary)', opacity: 0.3 }} />
         <ChevronRight className="chevron-item w-8 h-8 stroke-[2]" style={{ color: 'var(--text-secondary)', opacity: 0.2 }} />
