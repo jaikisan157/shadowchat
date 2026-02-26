@@ -1,5 +1,21 @@
 import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
+import { config } from 'dotenv';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { BotService } from './botService.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+config({ path: resolve(__dirname, '.env') });
+
+// Initialize bot service
+let botService = null;
+if (process.env.GEMINI_API_KEY) {
+  botService = new BotService(process.env.GEMINI_API_KEY);
+  console.log('🤖 Bot service enabled');
+} else {
+  console.log('⚠️ GEMINI_API_KEY not set — bots disabled');
+}
 
 // Create HTTP server
 const server = createServer((req, res) => {
@@ -165,12 +181,18 @@ function endChat(userId) {
   const partnerId = activePairs.get(userId);
 
   if (partnerId) {
-    const partnerWs = userSockets.get(partnerId);
-    if (partnerWs && partnerWs.readyState === 1) {
-      partnerWs.send(JSON.stringify({
-        type: 'partner_disconnected',
-        message: 'Stranger has disconnected.'
-      }));
+    // Clean up bot if partner is a bot
+    if (botService && botService.isBot(partnerId)) {
+      botService.removeBot(partnerId);
+      userSockets.delete(partnerId);
+    } else {
+      const partnerWs = userSockets.get(partnerId);
+      if (partnerWs && partnerWs.readyState === 1) {
+        partnerWs.send(JSON.stringify({
+          type: 'partner_disconnected',
+          message: 'Stranger has disconnected.'
+        }));
+      }
     }
     activePairs.delete(partnerId);
     activePairs.delete(userId);
@@ -182,7 +204,6 @@ function endChat(userId) {
 // Fully disconnect a user (when WebSocket closes)
 function disconnectUser(userId) {
   endChat(userId);
-  // Clean up interest counts
   const interests = userInterestsMap.get(userId) || [];
   removeUserInterests(interests);
   userInterestsMap.delete(userId);
@@ -328,6 +349,36 @@ wss.on('connection', (ws, req) => {
               messageId: msgId,
               timestamp: ts
             }));
+
+            // If partner is a bot, get bot response
+            if (botService && botService.isBot(partnerId)) {
+              // Show typing indicator
+              setTimeout(() => {
+                ws.send(JSON.stringify({ type: 'typing', isTyping: true }));
+              }, 300 + Math.random() * 700);
+
+              // Get bot response with realistic delay
+              botService.getResponse(partnerId, message.text).then(botReply => {
+                if (!botReply || !activePairs.has(userId)) return;
+                const delay = botService.getTypingDelay(botReply);
+
+                setTimeout(() => {
+                  if (!activePairs.has(userId)) return;
+                  // Stop typing
+                  ws.send(JSON.stringify({ type: 'typing', isTyping: false }));
+
+                  // Send bot message
+                  const botMsgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
+                  ws.send(JSON.stringify({
+                    type: 'message',
+                    from: 'stranger',
+                    text: botReply,
+                    messageId: botMsgId,
+                    timestamp: Date.now()
+                  }));
+                }, delay);
+              });
+            }
           }
           break;
 
@@ -524,3 +575,72 @@ setInterval(() => {
     }
   }
 }, 3000);
+
+// Bot fallback — if user has been waiting 30s+ with no match, pair with bot
+const BOT_FALLBACK_TIMEOUT = 30000;
+setInterval(() => {
+  if (!botService) return;
+
+  for (const [userId, waitingUser] of waitingUsers) {
+    const waitTime = Date.now() - waitingUser.timestamp;
+    if (waitTime >= BOT_FALLBACK_TIMEOUT) {
+      // Create a bot for this user
+      const botId = 'bot-' + generateUserId();
+      const persona = botService.createBot(botId, waitingUser.interests);
+
+      // Set up bot in system (no actual WebSocket, just track in maps)
+      userSockets.set(botId, { readyState: 0 }); // Fake ws, won't be used for sending
+      userInterestsMap.set(botId, persona.interests);
+
+      // Remove from waiting
+      waitingUsers.delete(userId);
+
+      // Pair them
+      activePairs.set(userId, botId);
+      activePairs.set(botId, userId);
+
+      // Send matched message to user
+      const userWs = userSockets.get(userId);
+      const commonInterests = (waitingUser.interests || []).filter(i =>
+        persona.interests.map(p => p.toLowerCase()).includes(i.toLowerCase())
+      );
+      const matchMsg = commonInterests.length > 0
+        ? `Matched on: ${commonInterests.join(', ')} 🎯`
+        : "You're chatting with a random stranger. Say hi!";
+
+      if (userWs && userWs.readyState === 1) {
+        userWs.send(JSON.stringify({
+          type: 'matched',
+          partnerId: botId,
+          message: matchMsg
+        }));
+      }
+
+      // Bot sends greeting after a short delay
+      setTimeout(async () => {
+        if (!activePairs.has(userId)) return;
+        const greeting = await botService.getGreeting(botId);
+
+        // Show typing first
+        if (userWs && userWs.readyState === 1) {
+          userWs.send(JSON.stringify({ type: 'typing', isTyping: true }));
+        }
+
+        setTimeout(() => {
+          if (!activePairs.has(userId) || !userWs || userWs.readyState !== 1) return;
+          userWs.send(JSON.stringify({ type: 'typing', isTyping: false }));
+          userWs.send(JSON.stringify({
+            type: 'message',
+            from: 'stranger',
+            text: greeting,
+            messageId: 'msg-' + Date.now() + '-bot',
+            timestamp: Date.now()
+          }));
+        }, 1000 + Math.random() * 1500);
+      }, 1500 + Math.random() * 2000);
+
+      console.log(`🤖 Bot matched: ${userId} <-> ${botId} (${persona.name})`);
+      break;
+    }
+  }
+}, 5000);
