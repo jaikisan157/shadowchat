@@ -39,6 +39,7 @@ export function ChatSection({
   const [activeReactionId, setActiveReactionId] = useState<string | null>(null);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [swipeOffset, setSwipeOffset] = useState(0);
+  const [showSwipeHint, setShowSwipeHint] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -48,6 +49,34 @@ export function ChatSection({
   const matchStartRef = useRef<number>(0);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const chatAreaRef = useRef<HTMLDivElement>(null);
+  const swipeHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Swipe hint: show once after 20s of no messages, mobile only
+  useEffect(() => {
+    if (chatState.status !== 'matched') return;
+    const isMobile = 'ontouchstart' in window;
+    const alreadyShown = localStorage.getItem('shadowchat_swipe_hint_shown');
+    if (!isMobile || alreadyShown) return;
+
+    const startCheck = () => {
+      if (swipeHintTimerRef.current) clearTimeout(swipeHintTimerRef.current);
+      swipeHintTimerRef.current = setTimeout(() => {
+        // Check if still no messages from users (only system messages)
+        const userMessages = chatState.messages.filter(m => m.sender !== 'system');
+        if (userMessages.length === 0) {
+          setShowSwipeHint(true);
+          localStorage.setItem('shadowchat_swipe_hint_shown', '1');
+          // Auto-dismiss after 3s
+          setTimeout(() => setShowSwipeHint(false), 3000);
+        }
+      }, 20000);
+    };
+
+    startCheck();
+    return () => {
+      if (swipeHintTimerRef.current) clearTimeout(swipeHintTimerRef.current);
+    };
+  }, [chatState.status, chatState.messages]);
 
   // Smart cooldown: escalates based on recent skip frequency
   const getSmartCooldown = () => {
@@ -335,6 +364,17 @@ export function ChatSection({
           {swipeOffset < -25 && (
             <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10 font-mono text-xs text-neon-cyan animate-fade-in-up">
               ← Skip
+            </div>
+          )}
+          {/* Swipe tutorial hint */}
+          {showSwipeHint && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+              <div className="flex flex-col items-center gap-2">
+                <div className="text-3xl animate-swipe-hint">👆</div>
+                <span className="font-mono text-xs text-text-secondary bg-dark-card/80 px-3 py-1 rounded-full">
+                  Swipe left to skip
+                </span>
+              </div>
             </div>
           )}
           {/* Messages */}
