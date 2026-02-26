@@ -50,29 +50,36 @@ export function ChatSection({
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const chatAreaRef = useRef<HTMLDivElement>(null);
   const swipeHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastMsgCountRef = useRef(0);
 
-  // Swipe hint: show once after 20s of no messages, mobile only
+  // Swipe hint: show every 20s of idle chat, mobile only
   useEffect(() => {
-    if (chatState.status !== 'matched') return;
-    const isMobile = 'ontouchstart' in window;
-    const alreadyShown = localStorage.getItem('shadowchat_swipe_hint_shown');
-    if (!isMobile || alreadyShown) return;
-
-    const startCheck = () => {
+    if (chatState.status !== 'matched') {
+      setShowSwipeHint(false);
       if (swipeHintTimerRef.current) clearTimeout(swipeHintTimerRef.current);
-      swipeHintTimerRef.current = setTimeout(() => {
-        // Check if still no messages from users (only system messages)
-        const userMessages = chatState.messages.filter(m => m.sender !== 'system');
-        if (userMessages.length === 0) {
-          setShowSwipeHint(true);
-          localStorage.setItem('shadowchat_swipe_hint_shown', '1');
-          // Auto-dismiss after 3s
-          setTimeout(() => setShowSwipeHint(false), 3000);
-        }
-      }, 20000);
-    };
+      lastMsgCountRef.current = 0;
+      return;
+    }
 
-    startCheck();
+    const isMobile = 'ontouchstart' in window;
+    if (!isMobile) return;
+
+    const msgCount = chatState.messages.filter(m => m.sender !== 'system').length;
+
+    // Reset timer on new message
+    if (msgCount !== lastMsgCountRef.current) {
+      lastMsgCountRef.current = msgCount;
+      setShowSwipeHint(false);
+    }
+
+    // Start/restart 20s idle timer
+    if (swipeHintTimerRef.current) clearTimeout(swipeHintTimerRef.current);
+    swipeHintTimerRef.current = setTimeout(() => {
+      setShowSwipeHint(true);
+      // Auto-dismiss after 3s
+      setTimeout(() => setShowSwipeHint(false), 3000);
+    }, 20000);
+
     return () => {
       if (swipeHintTimerRef.current) clearTimeout(swipeHintTimerRef.current);
     };
@@ -173,17 +180,17 @@ export function ChatSection({
     }
   }, [chatState.status]);
 
-  // Swipe-to-skip: attempt to skip, with confirmation if >20s
+  // Skip with confirmation: if chatting > 15s, ask before leaving
   const trySkip = useCallback(() => {
     if (newChatCooldown > 0) return;
     if (chatState.status !== 'matched') return;
 
     const chatDuration = Date.now() - matchStartRef.current;
-    if (chatDuration > 20000) {
-      // Chatting >20s — ask for confirmation
+    if (chatDuration > 15000) {
+      // Chatting >15s — ask for confirmation
       setShowLeaveConfirm(true);
     } else {
-      // <20s — instant skip
+      // <15s — instant skip
       handleNewChat();
     }
   }, [newChatCooldown, chatState.status, handleNewChat]);
@@ -323,7 +330,7 @@ export function ChatSection({
             </button>
           )}
           <button
-            onClick={handleNewChat}
+            onClick={trySkip}
             disabled={newChatCooldown > 0}
             className={`flex items-center gap-1 md:gap-2 transition-colors ${newChatCooldown > 0
               ? 'text-text-secondary/40 cursor-not-allowed'
