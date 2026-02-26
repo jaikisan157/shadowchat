@@ -129,14 +129,25 @@ function pairUsers(user1Id, user2Id) {
   activePairs.set(user1Id, user2Id);
   activePairs.set(user2Id, user1Id);
 
+  // Find common interests
+  const user1Interests = (userInterestsMap.get(user1Id) || []).map(i => i.toLowerCase().trim());
+  const user2Interests = (userInterestsMap.get(user2Id) || []).map(i => i.toLowerCase().trim());
+  const commonInterests = (userInterestsMap.get(user1Id) || []).filter(i =>
+    user2Interests.includes(i.toLowerCase().trim())
+  );
+
+  const matchMsg = commonInterests.length > 0
+    ? `Matched on: ${commonInterests.join(', ')} 🎯`
+    : "You're chatting with a random stranger. Say hi!";
+
   const user1Ws = userSockets.get(user1Id);
   const user2Ws = userSockets.get(user2Id);
 
-  if (user1Ws && user1Ws.readyState === 1) { // WebSocket.OPEN = 1
+  if (user1Ws && user1Ws.readyState === 1) {
     user1Ws.send(JSON.stringify({
       type: 'matched',
       partnerId: user2Id,
-      message: "You're chatting with a random stranger. Say hi!"
+      message: matchMsg
     }));
   }
 
@@ -144,7 +155,7 @@ function pairUsers(user1Id, user2Id) {
     user2Ws.send(JSON.stringify({
       type: 'matched',
       partnerId: user1Id,
-      message: "You're chatting with a random stranger. Say hi!"
+      message: matchMsg
     }));
   }
 }
