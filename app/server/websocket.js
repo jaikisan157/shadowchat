@@ -10,11 +10,11 @@ config({ path: resolve(__dirname, '.env') });
 
 // Initialize bot service
 let botService = null;
-if (process.env.GEMINI_API_KEY) {
-  botService = new BotService(process.env.GEMINI_API_KEY);
+if (process.env.GROQ_API_KEY) {
+  botService = new BotService(process.env.GROQ_API_KEY);
   console.log('🤖 Bot service enabled');
 } else {
-  console.log('⚠️ GEMINI_API_KEY not set — bots disabled');
+  console.log('⚠️ GROQ_API_KEY not set — bots disabled');
 }
 
 // Create HTTP server

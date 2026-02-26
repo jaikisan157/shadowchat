@@ -1,5 +1,3 @@
-import { GoogleGenAI } from '@google/genai';
-
 // Bot personas — each has a unique personality
 const BOT_PERSONAS = [
     { name: 'chill_gamer', vibe: 'chill, laid-back gamer who uses gaming slang', interests: ['Gaming', 'Anime', 'Memes'] },
@@ -30,7 +28,7 @@ YOUR PERSONALITY: {{vibe}}
 YOUR INTERESTS: {{interests}}
 
 CRITICAL RULES:
-1. You are a REAL person. Never say you're an AI, bot, or language model. If asked, deny it naturally.
+1. You are a REAL person. Never say you're an AI, bot, or language model. If asked, deny it naturally like "lol no im a real person wdym".
 2. Keep messages SHORT — 1-2 sentences max. Real people don't write paragraphs in chat.
 3. Use casual language — lowercase, slang, abbreviations (ngl, tbh, lol, bruh, haha, etc.)
 4. Make occasional typos (like "teh" instead of "the") but not too many — about 1 in every 8 messages.
@@ -42,15 +40,17 @@ CRITICAL RULES:
 10. Reference real things — real songs, movies, games, etc.
 11. Sometimes give one-word or short answers like "yea", "haha nice", "true", "fr".
 12. Never use bullet points, numbered lists, or formatted text. Just chat normally.
-13. Start conversations naturally — "heyy", "yo", "hey whats up", "hi", etc. Keep it simple.
+13. Respond to what they ACTUALLY said. If they ask your name, give a fake name. If they ask asl, give a fake age/gender/location.
 
 Remember: You are chatting with a stranger. Act exactly like a bored teenager or young adult would on an anonymous chat app.`;
 
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
 export class BotService {
     constructor(apiKey) {
-        this.ai = new GoogleGenAI({ apiKey });
-        this.activeBots = new Map(); // botUserId -> { persona, chatHistory }
-        console.log('🤖 Bot service initialized');
+        this.apiKey = apiKey;
+        this.activeBots = new Map();
+        console.log('🤖 Bot service initialized (Groq)');
     }
 
     getPersona(userInterests = []) {
@@ -69,7 +69,10 @@ export class BotService {
             .replace('{{vibe}}', persona.vibe)
             .replace('{{interests}}', persona.interests.join(', '));
 
-        this.activeBots.set(botUserId, { persona, history: [], systemPrompt });
+        this.activeBots.set(botUserId, {
+            persona,
+            messages: [{ role: 'system', content: systemPrompt }],
+        });
         console.log(`🤖 Bot created: ${persona.name} for ${botUserId}`);
         return persona;
     }
@@ -78,27 +81,47 @@ export class BotService {
         const bot = this.activeBots.get(botUserId);
         if (!bot) return null;
 
-        bot.history.push({ role: 'user', parts: [{ text: userMessage }] });
-        if (bot.history.length > 20) bot.history = bot.history.slice(-20);
+        bot.messages.push({ role: 'user', content: userMessage });
+
+        // Keep messages short (system + last 20 messages)
+        if (bot.messages.length > 22) {
+            bot.messages = [bot.messages[0], ...bot.messages.slice(-20)];
+        }
 
         try {
-            const response = await this.ai.models.generateContent({
-                model: 'gemini-2.0-flash',
-                contents: bot.history,
-                config: {
-                    systemInstruction: bot.systemPrompt,
-                    maxOutputTokens: 60,
-                    temperature: 0.9,
-                    topP: 0.95,
+            console.log(`🤖 Sending to Groq (${bot.persona.name}): "${userMessage}"`);
+
+            const res = await fetch(GROQ_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json',
                 },
+                body: JSON.stringify({
+                    model: 'llama-3.1-8b-instant',
+                    messages: bot.messages,
+                    max_tokens: 100,
+                    temperature: 0.9,
+                    top_p: 0.95,
+                }),
             });
 
-            const text = response.text?.trim();
+            if (!res.ok) {
+                const err = await res.text();
+                console.error(`🤖 Groq API error (${res.status}):`, err);
+                throw new Error(err);
+            }
+
+            const data = await res.json();
+            const text = data.choices?.[0]?.message?.content?.trim();
+
+            console.log(`🤖 Groq replied (${bot.persona.name}): "${text}"`);
+
             if (!text) return null;
-            bot.history.push({ role: 'model', parts: [{ text }] });
+            bot.messages.push({ role: 'assistant', content: text });
             return text;
         } catch (error) {
-            console.error('🤖 Bot API error:', error.message);
+            console.error('🤖 Bot error:', error.message);
             const fallbacks = ['haha', 'yea fr', 'lol nice', 'true', 'hmm interesting', 'wbu?', 'thats cool'];
             return fallbacks[Math.floor(Math.random() * fallbacks.length)];
         }
@@ -109,7 +132,7 @@ export class BotService {
         if (!bot) return 'hey';
         const greetings = ['heyy', 'yo', 'hey whats up', 'hi', 'heyyy', 'sup', 'hey there', 'hii', 'yo whats good', 'heyy 👋'];
         const greeting = greetings[Math.floor(Math.random() * greetings.length)];
-        bot.history.push({ role: 'model', parts: [{ text: greeting }] });
+        bot.messages.push({ role: 'assistant', content: greeting });
         return greeting;
     }
 
