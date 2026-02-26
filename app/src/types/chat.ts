@@ -6,6 +6,11 @@ export interface Message {
   reactions?: { emoji: string; from: 'user' | 'stranger' }[];
 }
 
+export interface InterestStat {
+  name: string;
+  count: number;
+}
+
 export interface ChatState {
   status: 'idle' | 'searching' | 'matched' | 'disconnected' | 'error';
   partnerId: string | null;
@@ -13,10 +18,12 @@ export interface ChatState {
   isTyping: boolean;
   errorMessage: string;
   onlineCount: number;
+  interestStats: InterestStat[];
 }
 
 export type WebSocketMessage =
-  | { type: 'connected'; userId: string; onlineCount: number }
+  | { type: 'connected'; userId: string; onlineCount: number; interests?: InterestStat[] }
+  | { type: 'interest_stats'; interests: InterestStat[] }
   | { type: 'waiting'; message: string }
   | { type: 'matched'; partnerId: string; message: string }
   | { type: 'message'; from: 'stranger'; text: string; messageId: string; timestamp: number }

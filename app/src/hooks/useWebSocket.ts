@@ -40,6 +40,7 @@ export function useWebSocket(): {
     isTyping: false,
     errorMessage: '',
     onlineCount: 0,
+    interestStats: [],
   });
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -131,8 +132,6 @@ export function useWebSocket(): {
     switch (data.type) {
       case 'connected':
         console.log('Connected with userId:', data.userId);
-        // If we reconnected, ensure we're in a clean state
-        // (server gave us a new userId, old pairing is gone)
         setChatState(prev => {
           if (prev.status === 'matched' || prev.status === 'searching') {
             return {
@@ -141,6 +140,7 @@ export function useWebSocket(): {
               partnerId: null,
               isTyping: false,
               onlineCount: data.onlineCount || prev.onlineCount,
+              interestStats: data.interests || prev.interestStats,
               messages: [
                 ...prev.messages,
                 {
@@ -152,8 +152,19 @@ export function useWebSocket(): {
               ],
             };
           }
-          return { ...prev, onlineCount: data.onlineCount || prev.onlineCount };
+          return {
+            ...prev,
+            onlineCount: data.onlineCount || prev.onlineCount,
+            interestStats: data.interests || prev.interestStats,
+          };
         });
+        break;
+
+      case 'interest_stats':
+        setChatState(prev => ({
+          ...prev,
+          interestStats: data.interests,
+        }));
         break;
 
       case 'waiting':
@@ -372,12 +383,12 @@ export function useWebSocket(): {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       // Clear messages and set searching state
       setChatState(prev => ({
+        ...prev,
         status: 'searching',
         partnerId: null,
         messages: [],
         isTyping: false,
         errorMessage: '',
-        onlineCount: prev.onlineCount,
       }));
 
       wsRef.current.send(JSON.stringify({
@@ -421,12 +432,12 @@ export function useWebSocket(): {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       // Clear messages and set searching state
       setChatState(prev => ({
+        ...prev,
         status: 'searching',
         partnerId: null,
         messages: [],
         isTyping: false,
         errorMessage: '',
-        onlineCount: prev.onlineCount,
       }));
 
       wsRef.current.send(JSON.stringify({

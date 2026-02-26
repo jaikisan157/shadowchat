@@ -42,12 +42,11 @@ function App() {
   const toggleTheme = useCallback(() => setIsDark(d => !d), []);
 
   // Handle start chat from hero
-  const handleStartChat = useCallback(() => {
+  const handleStartChat = useCallback((interests: string[] = []) => {
     setShowChat(true);
     window.history.pushState({ chat: true }, '', '#chat');
-    // Start searching immediately
     setTimeout(() => {
-      findMatch();
+      findMatch(interests);
     }, 500);
   }, [findMatch]);
 
@@ -119,6 +118,7 @@ function App() {
           onlineCount={chatState.onlineCount}
           isDark={isDark}
           toggleTheme={toggleTheme}
+          interestStats={chatState.interestStats}
         />
       </div>
 

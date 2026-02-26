@@ -26,21 +26,68 @@ const browserSockets = new Map(); // browserId -> userId (one per browser tab)
 
 const IDLE_TIMEOUT = 3 * 60 * 1000; // 3 minutes
 
+// Predefined popular interests
+const AVAILABLE_INTERESTS = [
+  'Gaming', 'Music', 'Movies', 'Anime', 'Sports',
+  'Tech', 'Memes', 'Art', 'Books', 'Travel',
+  'Food', 'Fitness', 'Fashion', 'Science', 'Photography',
+  'Crypto', 'Comedy', 'K-Pop', 'Hip-Hop', 'Netflix'
+];
+
+// Track interest counts: interest -> count of users currently with that interest
+const interestCounts = new Map();
+
+// Get interest stats (sorted by popularity)
+function getInterestStats() {
+  return AVAILABLE_INTERESTS.map(interest => ({
+    name: interest,
+    count: interestCounts.get(interest) || 0
+  })).sort((a, b) => b.count - a.count);
+}
+
+// Update interest counts when user joins/leaves with interests
+function addUserInterests(interests) {
+  for (const interest of interests) {
+    interestCounts.set(interest, (interestCounts.get(interest) || 0) + 1);
+  }
+}
+
+function removeUserInterests(interests) {
+  for (const interest of interests) {
+    const count = (interestCounts.get(interest) || 1) - 1;
+    if (count <= 0) interestCounts.delete(interest);
+    else interestCounts.set(interest, count);
+  }
+}
+
 // Generate unique user ID
 function generateUserId() {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
-// Find a match for a user
+// Track user interests per user
+const userInterestsMap = new Map(); // userId -> interests[]
+
+// Find a match for a user (interest-based first, then fallback)
 function findMatch(userId, interests = []) {
+  // First pass: try to find someone with common interests
+  if (interests.length > 0) {
+    for (const [waitingId, waitingUser] of waitingUsers) {
+      if (waitingId !== userId && waitingUser.interests.length > 0) {
+        const commonInterests = interests.filter(i => waitingUser.interests.includes(i));
+        if (commonInterests.length > 0) return waitingId;
+      }
+    }
+  }
+
+  // Second pass: match with anyone who has no interests OR after waiting 10s
   for (const [waitingId, waitingUser] of waitingUsers) {
     if (waitingId !== userId) {
-      // Check for common interests if both have interests
-      if (interests.length > 0 && waitingUser.interests.length > 0) {
-        const commonInterests = interests.filter(i => waitingUser.interests.includes(i));
-        if (commonInterests.length === 0) continue;
+      // Match if either has no interests, or if waiting user has been waiting > 10s
+      if (interests.length === 0 || waitingUser.interests.length === 0 ||
+        Date.now() - waitingUser.timestamp > 10000) {
+        return waitingId;
       }
-      return waitingId;
     }
   }
   return null;
@@ -97,6 +144,10 @@ function endChat(userId) {
 // Fully disconnect a user (when WebSocket closes)
 function disconnectUser(userId) {
   endChat(userId);
+  // Clean up interest counts
+  const interests = userInterestsMap.get(userId) || [];
+  removeUserInterests(interests);
+  userInterestsMap.delete(userId);
   userSockets.delete(userId);
   lastActivity.delete(userId);
 }
@@ -145,11 +196,12 @@ wss.on('connection', (ws, req) => {
 
   console.log(`User connected: ${userId}, Total connections: ${wss.clients.size}`);
 
-  // Send user their ID and current online count
+  // Send user their ID, online count, and interest stats
   ws.send(JSON.stringify({
     type: 'connected',
     userId: userId,
-    onlineCount: wss.clients.size
+    onlineCount: wss.clients.size,
+    interests: getInterestStats()
   }));
 
   // Track activity
@@ -167,12 +219,27 @@ wss.on('connection', (ws, req) => {
       lastActivity.set(userId, Date.now());
 
       switch (message.type) {
+        case 'get_interests':
+          ws.send(JSON.stringify({
+            type: 'interest_stats',
+            interests: getInterestStats()
+          }));
+          break;
+
         case 'find_match':
           // Remove from waiting if already there
           waitingUsers.delete(userId);
 
+          // Track this user's interests
+          const userInterests = (message.interests || []).filter(i => AVAILABLE_INTERESTS.includes(i));
+          // Remove old interests, add new ones
+          const oldInterests = userInterestsMap.get(userId) || [];
+          removeUserInterests(oldInterests);
+          userInterestsMap.set(userId, userInterests);
+          addUserInterests(userInterests);
+
           // Try to find a match
-          const matchId = findMatch(userId, message.interests || []);
+          const matchId = findMatch(userId, userInterests);
 
           if (matchId) {
             // Found a match

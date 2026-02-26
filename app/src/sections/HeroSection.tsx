@@ -1,15 +1,18 @@
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ChevronRight, Sun, Moon } from 'lucide-react';
+import type { InterestStat } from '@/types/chat';
 
 interface HeroSectionProps {
-  onStartChat: () => void;
+  onStartChat: (interests: string[]) => void;
   onlineCount: number;
   isDark: boolean;
   toggleTheme: () => void;
+  interestStats: InterestStat[];
 }
 
-export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme }: HeroSectionProps) {
+export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, interestStats }: HeroSectionProps) {
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const headlineRef = useRef<HTMLDivElement>(null);
   const subheadRef = useRef<HTMLParagraphElement>(null);
@@ -17,67 +20,57 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme }: H
   const microRef = useRef<HTMLSpanElement>(null);
   const chevronsRef = useRef<HTMLDivElement>(null);
 
+  const toggleInterest = (interest: string) => {
+    setSelectedInterests(prev =>
+      prev.includes(interest)
+        ? prev.filter(i => i !== interest)
+        : prev.length < 5 ? [...prev, interest] : prev
+    );
+  };
+
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Initial state
       gsap.set('.headline-line', { opacity: 0, y: 18 });
       gsap.set(subheadRef.current, { opacity: 0, y: 14 });
       gsap.set(ctaRef.current, { opacity: 0, y: 14 });
       gsap.set(microRef.current, { opacity: 0 });
       gsap.set('.chevron-item', { opacity: 0, x: 12, scale: 0.98 });
+      gsap.set('.interest-section', { opacity: 0, y: 10 });
 
-      // Animation timeline
       const tl = gsap.timeline({ delay: 0.3 });
-
       tl.to('.headline-line', {
-        opacity: 1,
-        y: 0,
-        duration: 0.6,
-        stagger: 0.08,
-        ease: 'power2.out',
+        opacity: 1, y: 0, duration: 0.7, stagger: 0.15, ease: 'power3.out',
       })
         .to(subheadRef.current, {
-          opacity: 1,
-          y: 0,
-          duration: 0.5,
-          ease: 'power2.out',
+          opacity: 1, y: 0, duration: 0.6, ease: 'power2.out',
+        }, '-=0.3')
+        .to('.interest-section', {
+          opacity: 1, y: 0, duration: 0.5, ease: 'power2.out',
         }, '-=0.2')
         .to(ctaRef.current, {
-          opacity: 1,
-          y: 0,
-          duration: 0.5,
-          ease: 'power2.out',
-        }, '-=0.3')
+          opacity: 1, y: 0, duration: 0.6, ease: 'power2.out',
+        }, '-=0.2')
         .to(microRef.current, {
-          opacity: 1,
-          duration: 0.4,
-          ease: 'power2.out',
+          opacity: 1, duration: 0.5,
         }, '-=0.2')
         .to('.chevron-item', {
-          opacity: 1,
-          x: 0,
-          scale: 1,
-          duration: 0.5,
-          stagger: 0.1,
-          ease: 'power2.out',
+          opacity: 1, x: 0, scale: 1, duration: 0.5, stagger: 0.1, ease: 'power2.out',
         }, '-=0.4');
     }, containerRef);
 
     return () => ctx.revert();
   }, []);
 
-  // Handle space key press
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && !e.repeat) {
+      if (e.code === 'Space' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
         e.preventDefault();
-        onStartChat();
+        onStartChat(selectedInterests);
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onStartChat]);
+  }, [onStartChat, selectedInterests]);
 
   return (
     <div
@@ -92,7 +85,7 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme }: H
         </span>
       </div>
 
-      {/* Theme Toggle in nav */}
+      {/* Theme Toggle */}
       <div className="absolute right-[5vw] top-[3.5vh]">
         <button
           onClick={toggleTheme}
@@ -107,8 +100,7 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme }: H
 
       {/* Main Content */}
       <div className="pl-[5vw] pr-[5vw]">
-        {/* Headline */}
-        <div ref={headlineRef} className="mb-8">
+        <div ref={headlineRef} className="mb-6 md:mb-8">
           <h1 className="font-heading font-bold uppercase tracking-tight leading-[0.95]"
             style={{ fontSize: 'clamp(44px, 6vw, 84px)' }}>
             <div className="headline-line text-text-primary">TALK</div>
@@ -117,30 +109,54 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme }: H
           </h1>
         </div>
 
-        {/* Subheadline */}
         <p
           ref={subheadRef}
-          className="text-text-secondary text-base md:text-lg max-w-[34vw] mb-8 leading-relaxed"
+          className="text-text-secondary text-sm md:text-lg max-w-md md:max-w-[34vw] mb-5 md:mb-8 leading-relaxed"
         >
-          Anonymous, one-on-one, no accounts. Just click and start talking to someone new.
+          Anonymous, one-on-one, no accounts. Pick your interests to find like-minded people.
         </p>
+
+        {/* Interest Tags */}
+        <div className="interest-section mb-5 md:mb-6 max-w-lg md:max-w-[40vw]">
+          <p className="font-mono text-[10px] md:text-xs text-text-secondary/60 mb-2 uppercase tracking-wider">
+            Pick interests · optional · max 5
+          </p>
+          <div className="flex flex-wrap gap-1.5 md:gap-2">
+            {interestStats.map(interest => {
+              const isSelected = selectedInterests.includes(interest.name);
+              return (
+                <button
+                  key={interest.name}
+                  onClick={() => toggleInterest(interest.name)}
+                  className={`px-2.5 py-1 md:px-3 md:py-1.5 rounded-full font-mono text-[10px] md:text-xs transition-all border ${isSelected
+                      ? 'bg-neon-cyan/20 text-neon-cyan border-neon-cyan/50 shadow-[0_0_8px_rgba(0,255,200,0.15)]'
+                      : 'bg-white/5 text-text-secondary border-white/10 hover:border-white/25 hover:bg-white/10'
+                    }`}
+                >
+                  {interest.name}
+                  {interest.count > 0 && (
+                    <span className={`ml-1 ${isSelected ? 'text-neon-cyan/70' : 'text-text-secondary/40'}`}>
+                      {interest.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* CTA Button */}
         <button
           ref={ctaRef}
-          onClick={onStartChat}
+          onClick={() => onStartChat(selectedInterests)}
           className="btn-neon bg-neon-cyan text-black font-heading font-semibold text-lg px-10 py-4 rounded-md mb-4 neon-glow hover:shadow-neon-strong transition-all"
           style={{ minWidth: '220px' }}
         >
-          Start Chat
+          {selectedInterests.length > 0 ? `Start Chat (${selectedInterests.length})` : 'Start Chat'}
         </button>
 
-        {/* Micro Text */}
         <div>
-          <span
-            ref={microRef}
-            className="font-mono text-xs text-text-secondary/55"
-          >
+          <span ref={microRef} className="font-mono text-xs text-text-secondary/55">
             Or press Space
           </span>
         </div>
@@ -156,7 +172,7 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme }: H
         <ChevronRight className="chevron-item w-8 h-8 stroke-[2]" style={{ color: 'var(--text-secondary)', opacity: 0.1 }} />
       </div>
 
-      {/* Connection Status & Online Counter */}
+      {/* Online Counter */}
       <div className="absolute bottom-[4vh] right-[5vw] flex items-center gap-4">
         {onlineCount > 0 && (
           <div className="flex items-center gap-2">
