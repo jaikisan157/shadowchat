@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Square, MessageCircle, Users, Smile } from 'lucide-react';
+import { Send, Square, MessageCircle, Users, Smile, Sun, Moon } from 'lucide-react';
 import { EmojiPicker } from '@/components/EmojiPicker';
 import type { Message } from '@/types/chat';
 
@@ -16,6 +16,8 @@ interface ChatSectionProps {
   onSendReaction: (messageId: string, emoji: string) => void;
   onStopChat: () => void;
   onNewChat: () => void;
+  isDark: boolean;
+  toggleTheme: () => void;
 }
 
 export function ChatSection({
@@ -24,7 +26,9 @@ export function ChatSection({
   onSendTyping,
   onSendReaction,
   onStopChat,
-  onNewChat
+  onNewChat,
+  isDark,
+  toggleTheme
 }: ChatSectionProps) {
   const [inputText, setInputText] = useState('');
   const [newChatCooldown, setNewChatCooldown] = useState(0);
@@ -171,6 +175,16 @@ export function ChatSection({
             <span className="font-mono text-xs md:text-sm">
               {newChatCooldown > 0 ? `New (${newChatCooldown}s)` : 'New'}
             </span>
+          </button>
+          {/* Theme toggle in header */}
+          <button
+            onClick={toggleTheme}
+            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-all"
+            title={isDark ? 'Light mode' : 'Dark mode'}
+          >
+            {isDark
+              ? <Sun className="w-4 h-4 text-text-secondary" />
+              : <Moon className="w-4 h-4 text-text-secondary" />}
           </button>
         </div>
       </header>

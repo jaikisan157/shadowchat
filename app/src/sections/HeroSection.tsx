@@ -1,13 +1,15 @@
 import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Sun, Moon } from 'lucide-react';
 
 interface HeroSectionProps {
   onStartChat: () => void;
   onlineCount: number;
+  isDark: boolean;
+  toggleTheme: () => void;
 }
 
-export function HeroSection({ onStartChat, onlineCount }: HeroSectionProps) {
+export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme }: HeroSectionProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const headlineRef = useRef<HTMLDivElement>(null);
   const subheadRef = useRef<HTMLParagraphElement>(null);
@@ -80,7 +82,8 @@ export function HeroSection({ onStartChat, onlineCount }: HeroSectionProps) {
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-screen bg-black flex flex-col justify-center overflow-hidden"
+      className="relative w-full h-screen flex flex-col justify-center overflow-hidden"
+      style={{ background: 'var(--dark-bg)' }}
     >
       {/* Logo */}
       <div className="absolute left-[5vw] top-[4vh]">
@@ -89,18 +92,18 @@ export function HeroSection({ onStartChat, onlineCount }: HeroSectionProps) {
         </span>
       </div>
 
-      {/* Nav Links */}
-      <nav className="absolute right-[5vw] top-[4.2vh] flex items-center gap-6">
-        <button className="text-sm text-text-secondary hover:text-text-primary transition-colors">
-          Language
+      {/* Theme Toggle in nav */}
+      <div className="absolute right-[5vw] top-[3.5vh]">
+        <button
+          onClick={toggleTheme}
+          className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-all border border-white/10"
+          title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          {isDark
+            ? <Sun className="w-4 h-4 text-text-secondary" />
+            : <Moon className="w-4 h-4 text-text-secondary" />}
         </button>
-        <button className="text-sm text-text-secondary hover:text-text-primary transition-colors">
-          Terms
-        </button>
-        <button className="text-sm text-text-secondary hover:text-text-primary transition-colors">
-          Privacy
-        </button>
-      </nav>
+      </div>
 
       {/* Main Content */}
       <div className="pl-[5vw] pr-[5vw]">
@@ -148,9 +151,9 @@ export function HeroSection({ onStartChat, onlineCount }: HeroSectionProps) {
         ref={chevronsRef}
         className="absolute right-[6vw] top-1/2 -translate-y-1/2 flex flex-col gap-2"
       >
-        <ChevronRight className="chevron-item w-8 h-8 text-white/18 stroke-[2]" />
-        <ChevronRight className="chevron-item w-8 h-8 text-white/18 stroke-[2]" />
-        <ChevronRight className="chevron-item w-8 h-8 text-white/18 stroke-[2]" />
+        <ChevronRight className="chevron-item w-8 h-8 stroke-[2]" style={{ color: 'var(--text-secondary)', opacity: 0.3 }} />
+        <ChevronRight className="chevron-item w-8 h-8 stroke-[2]" style={{ color: 'var(--text-secondary)', opacity: 0.2 }} />
+        <ChevronRight className="chevron-item w-8 h-8 stroke-[2]" style={{ color: 'var(--text-secondary)', opacity: 0.1 }} />
       </div>
 
       {/* Connection Status & Online Counter */}

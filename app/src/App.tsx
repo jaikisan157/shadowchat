@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Sun, Moon } from 'lucide-react';
 import { HeroSection } from '@/sections/HeroSection';
 import { ChatSection } from '@/sections/ChatSection';
 import { useWebSocket } from '@/hooks/useWebSocket';
@@ -100,23 +99,17 @@ function App() {
       {/* Vignette */}
       <div className="vignette" />
 
-      {/* Theme Toggle */}
-      <button
-        onClick={toggleTheme}
-        className="fixed top-4 right-4 z-[60] w-9 h-9 rounded-full flex items-center justify-center bg-dark-card border border-white/10 hover:border-white/20 transition-all shadow-lg"
-        title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-      >
-        {isDark
-          ? <Sun className="w-4 h-4 text-text-secondary" />
-          : <Moon className="w-4 h-4 text-text-secondary" />}
-      </button>
-
-      {/* Hero Section */}
+      {/* Hero Section - has theme toggle built in */}
       <div
         ref={heroRef}
         className={`${showChat ? 'absolute inset-0 z-10' : 'relative z-20'}`}
       >
-        <HeroSection onStartChat={handleStartChat} onlineCount={chatState.onlineCount} />
+        <HeroSection
+          onStartChat={handleStartChat}
+          onlineCount={chatState.onlineCount}
+          isDark={isDark}
+          toggleTheme={toggleTheme}
+        />
       </div>
 
       {/* Chat Section */}
@@ -132,6 +125,8 @@ function App() {
             onSendReaction={sendReaction}
             onStopChat={stopChat}
             onNewChat={handleNewChat}
+            isDark={isDark}
+            toggleTheme={toggleTheme}
           />
         </div>
       )}
