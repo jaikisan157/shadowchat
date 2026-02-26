@@ -29,7 +29,6 @@ export function ChatSection({
   const [inputText, setInputText] = useState('');
   const [newChatCooldown, setNewChatCooldown] = useState(0);
   const [activeReactionId, setActiveReactionId] = useState<string | null>(null);
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -195,39 +194,30 @@ export function ChatSection({
                 )}
 
                 {/* Bubble + Reaction Trigger */}
-                <div className="relative group">
-                  <div
-                    className={`max-w-[80vw] md:max-w-[56vw] px-3 md:px-4 py-2 md:py-3 text-sm md:text-base leading-relaxed ${message.sender === 'user'
-                      ? 'message-bubble-user'
-                      : message.sender === 'stranger'
-                        ? 'message-bubble-stranger'
-                        : 'message-bubble-system text-center'
-                      }`}
-                    onTouchStart={() => {
-                      if (message.sender === 'system') return;
-                      longPressTimerRef.current = setTimeout(() => {
-                        setActiveReactionId(message.id);
-                      }, 500);
-                    }}
-                    onTouchEnd={() => {
-                      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
-                    }}
-                    onTouchMove={() => {
-                      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
-                    }}
-                  >
-                    {message.text}
-                  </div>
-
-                  {/* Desktop: Hover reaction button */}
-                  {message.sender !== 'system' && chatState.status === 'matched' && (
-                    <button
-                      onClick={() => setActiveReactionId(activeReactionId === message.id ? null : message.id)}
-                      className={`absolute ${message.sender === 'user' ? '-left-8' : '-right-8'} top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center w-6 h-6 rounded-full bg-dark-input hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100`}
+                <div className="relative">
+                  <div className={`flex items-center gap-1.5 group ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                    {/* Message Bubble */}
+                    <div
+                      className={`max-w-[75vw] md:max-w-[56vw] px-3 md:px-4 py-2 md:py-3 text-sm md:text-base leading-relaxed ${message.sender === 'user'
+                        ? 'message-bubble-user'
+                        : message.sender === 'stranger'
+                          ? 'message-bubble-stranger'
+                          : 'message-bubble-system text-center'
+                        }`}
                     >
-                      <Smile className="w-3.5 h-3.5 text-text-secondary" />
-                    </button>
-                  )}
+                      {message.text}
+                    </div>
+
+                    {/* Reaction Button */}
+                    {message.sender !== 'system' && chatState.status === 'matched' && (
+                      <button
+                        onClick={() => setActiveReactionId(activeReactionId === message.id ? null : message.id)}
+                        className="flex items-center justify-center w-6 h-6 rounded-full hover:bg-white/10 transition-all opacity-40 md:opacity-0 group-hover:opacity-100 shrink-0"
+                      >
+                        <Smile className="w-3.5 h-3.5 text-text-secondary" />
+                      </button>
+                    )}
+                  </div>
 
                   {/* Emoji Picker */}
                   {activeReactionId === message.id && (
