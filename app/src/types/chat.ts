@@ -37,7 +37,14 @@ export type WebSocketMessage =
   | { type: 'reaction'; messageId: string; emoji: string }
   | { type: 'reaction_received'; messageId: string; emoji: string }
   | { type: 'duplicate_tab'; message: string }
+  | { type: 'game_invite'; game: string; data?: unknown }
+  | { type: 'game_accept'; game: string; data?: unknown }
+  | { type: 'game_decline'; game: string; data?: unknown }
+  | { type: 'game_move'; game: string; data: unknown }
+  | { type: 'game_leave'; game: string; data?: unknown }
   | { type: 'error'; message: string };
+
+export type GameType = 'tictactoe' | 'rps';
 
 export interface UseWebSocketReturn {
   connected: boolean;
@@ -49,4 +56,5 @@ export interface UseWebSocketReturn {
   sendReaction: (messageId: string, emoji: string) => void;
   stopChat: () => void;
   newChat: (interests?: string[]) => void;
+  sendGameMessage: (type: string, game: string, data?: unknown) => void;
 }

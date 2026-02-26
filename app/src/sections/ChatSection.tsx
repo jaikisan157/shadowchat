@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Square, MessageCircle, Users, Smile, Sun, Moon, Flag } from 'lucide-react';
 import { EmojiPicker } from '@/components/EmojiPicker';
 import { NetworkIndicator } from '@/components/NetworkIndicator';
-import type { Message } from '@/types/chat';
+import { GameOverlay } from '@/components/GameOverlay';
+import type { Message, WebSocketMessage } from '@/types/chat';
 
 interface ChatSectionProps {
   chatState: {
@@ -21,6 +22,8 @@ interface ChatSectionProps {
   isDark: boolean;
   toggleTheme: () => void;
   connected: boolean;
+  sendGameMessage: (type: string, game: string, data?: unknown) => void;
+  setGameHandler: (handler: ((msg: WebSocketMessage) => void) | null) => void;
 }
 
 export function ChatSection({
@@ -33,7 +36,9 @@ export function ChatSection({
   onGoHome,
   isDark,
   toggleTheme,
-  connected
+  connected,
+  sendGameMessage,
+  setGameHandler
 }: ChatSectionProps) {
   const [inputText, setInputText] = useState('');
   const [newChatCooldown, setNewChatCooldown] = useState(0);
@@ -520,6 +525,13 @@ export function ChatSection({
                   <Flag className="w-3.5 h-3.5 md:w-4 md:h-4" />
                 </button>
               )}
+              {/* Game button */}
+              <GameOverlay
+                sendGameMessage={sendGameMessage}
+                setGameHandler={setGameHandler}
+                isMatched={chatState.status === 'matched'}
+                onPartnerDisconnect={chatState.status === 'disconnected'}
+              />
               <input
                 ref={inputRef}
                 type="text"

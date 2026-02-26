@@ -31,6 +31,8 @@ export function useWebSocket(): {
   sendReaction: (messageId: string, emoji: string) => void;
   stopChat: () => void;
   newChat: (interests?: string[]) => void;
+  sendGameMessage: (type: string, game: string, data?: unknown) => void;
+  setGameHandler: (handler: ((msg: WebSocketMessage) => void) | null) => void;
 } {
   const [connected, setConnected] = useState(false);
   const [chatState, setChatState] = useState<ChatState>({
@@ -47,6 +49,7 @@ export function useWebSocket(): {
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleMessageRef = useRef<(data: WebSocketMessage) => void>(() => { });
   const isDuplicateTabRef = useRef(false);
+  const gameHandlerRef = useRef<((msg: WebSocketMessage) => void) | null>(null);
 
   const connect = useCallback(() => {
     // Don't reconnect if this tab was kicked as duplicate
@@ -372,7 +375,12 @@ export function useWebSocket(): {
         break;
 
       default:
-        console.log('Unknown message type:', data);
+        // Forward game messages to game handler
+        if (gameHandlerRef.current && data.type.startsWith('game_')) {
+          gameHandlerRef.current(data);
+        } else {
+          console.log('Unknown message type:', data);
+        }
     }
   };
 
@@ -499,6 +507,16 @@ export function useWebSocket(): {
     }
   }, []);
 
+  const sendGameMessage = useCallback((type: string, game: string, data?: unknown) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type, game, data }));
+    }
+  }, []);
+
+  const setGameHandler = useCallback((handler: ((msg: WebSocketMessage) => void) | null) => {
+    gameHandlerRef.current = handler;
+  }, []);
+
   return {
     connected,
     chatState,
@@ -509,5 +527,7 @@ export function useWebSocket(): {
     sendReaction,
     stopChat,
     newChat,
+    sendGameMessage,
+    setGameHandler,
   };
 }

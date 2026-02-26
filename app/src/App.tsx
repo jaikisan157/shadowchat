@@ -25,7 +25,9 @@ function App() {
     sendTyping,
     sendReaction,
     stopChat,
-    newChat
+    newChat,
+    sendGameMessage,
+    setGameHandler
   } = useWebSocket();
 
   // Apply theme to html element
@@ -139,6 +141,8 @@ function App() {
             isDark={isDark}
             toggleTheme={toggleTheme}
             connected={connected}
+            sendGameMessage={sendGameMessage}
+            setGameHandler={setGameHandler}
           />
         </div>
       )}

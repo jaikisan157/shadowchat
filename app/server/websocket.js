@@ -390,6 +390,26 @@ wss.on('connection', (ws, req) => {
           }
           break;
 
+        // Game messages — just relay to partner
+        case 'game_invite':
+        case 'game_accept':
+        case 'game_decline':
+        case 'game_move':
+        case 'game_leave': {
+          const gamePartnerId = activePairs.get(userId);
+          if (gamePartnerId) {
+            const gamePartnerWs = userSockets.get(gamePartnerId);
+            if (gamePartnerWs && gamePartnerWs.readyState === 1) {
+              gamePartnerWs.send(JSON.stringify({
+                type: message.type,
+                game: message.game,
+                data: message.data,
+              }));
+            }
+          }
+          break;
+        }
+
         default:
           console.log('Unknown message type:', message.type);
       }
