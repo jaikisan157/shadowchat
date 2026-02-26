@@ -13,6 +13,7 @@ interface HeroSectionProps {
 
 export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, interestStats }: HeroSectionProps) {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [customInput, setCustomInput] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const headlineRef = useRef<HTMLDivElement>(null);
   const subheadRef = useRef<HTMLParagraphElement>(null);
@@ -26,6 +27,14 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, int
         ? prev.filter(i => i !== interest)
         : prev.length < 5 ? [...prev, interest] : prev
     );
+  };
+
+  const addCustomInterest = () => {
+    const trimmed = customInput.trim();
+    if (trimmed && !selectedInterests.includes(trimmed) && selectedInterests.length < 5) {
+      setSelectedInterests(prev => [...prev, trimmed]);
+      setCustomInput('');
+    }
   };
 
   useEffect(() => {
@@ -119,9 +128,42 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, int
         {/* Interest Tags */}
         <div className="interest-section mb-5 md:mb-6 max-w-lg md:max-w-[40vw]">
           <p className="font-mono text-[10px] md:text-xs text-text-secondary/60 mb-2 uppercase tracking-wider">
-            Pick interests · optional · max 5
+            Pick or type interests · optional · max 5
           </p>
+          {/* Custom interest input */}
+          <div className="flex gap-2 mb-2">
+            <input
+              type="text"
+              value={customInput}
+              onChange={e => setCustomInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); addCustomInterest(); } }}
+              placeholder="Type your own..."
+              maxLength={20}
+              className="flex-1 bg-white/5 border border-white/10 rounded-full px-3 py-1 md:py-1.5 font-mono text-[10px] md:text-xs text-text-primary placeholder:text-text-secondary/40 focus:border-neon-cyan/50 focus:outline-none transition-colors"
+            />
+            {customInput.trim() && (
+              <button
+                onClick={addCustomInterest}
+                className="px-3 py-1 rounded-full font-mono text-[10px] md:text-xs bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/50 hover:bg-neon-cyan/30 transition-colors"
+              >
+                Add
+              </button>
+            )}
+          </div>
           <div className="flex flex-wrap gap-1.5 md:gap-2">
+            {/* Show selected custom interests first */}
+            {selectedInterests
+              .filter(i => !interestStats.some(s => s.name === i))
+              .map(interest => (
+                <button
+                  key={interest}
+                  onClick={() => toggleInterest(interest)}
+                  className="px-2.5 py-1 md:px-3 md:py-1.5 rounded-full font-mono text-[10px] md:text-xs transition-all border bg-neon-cyan/20 text-neon-cyan border-neon-cyan/50 shadow-[0_0_8px_rgba(0,255,200,0.15)]"
+                >
+                  {interest} ✕
+                </button>
+              ))}
+            {/* Default interests */}
             {interestStats.map(interest => {
               const isSelected = selectedInterests.includes(interest.name);
               return (
@@ -129,8 +171,8 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, int
                   key={interest.name}
                   onClick={() => toggleInterest(interest.name)}
                   className={`px-2.5 py-1 md:px-3 md:py-1.5 rounded-full font-mono text-[10px] md:text-xs transition-all border ${isSelected
-                      ? 'bg-neon-cyan/20 text-neon-cyan border-neon-cyan/50 shadow-[0_0_8px_rgba(0,255,200,0.15)]'
-                      : 'bg-white/5 text-text-secondary border-white/10 hover:border-white/25 hover:bg-white/10'
+                    ? 'bg-neon-cyan/20 text-neon-cyan border-neon-cyan/50 shadow-[0_0_8px_rgba(0,255,200,0.15)]'
+                    : 'bg-white/5 text-text-secondary border-white/10 hover:border-white/25 hover:bg-white/10'
                     }`}
                 >
                   {interest.name}

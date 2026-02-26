@@ -68,28 +68,46 @@ function generateUserId() {
 // Track user interests per user
 const userInterestsMap = new Map(); // userId -> interests[]
 
-// Find a match for a user (interest-based first, then fallback)
+const INTEREST_MATCH_TIMEOUT = 15000; // 15 seconds strict interest matching
+
+// Find a match for a user (strict interest first 15s, then random)
 function findMatch(userId, interests = []) {
-  // First pass: try to find someone with common interests
-  if (interests.length > 0) {
+  const hasInterests = interests.length > 0;
+  const userWaitEntry = waitingUsers.get(userId);
+  const userWaitTime = userWaitEntry ? Date.now() - userWaitEntry.timestamp : 0;
+
+  // Normalize interests for comparison (case-insensitive)
+  const normalizedInterests = interests.map(i => i.toLowerCase().trim());
+
+  if (hasInterests) {
+    // Pass 1: Try to find someone with common interests
     for (const [waitingId, waitingUser] of waitingUsers) {
-      if (waitingId !== userId && waitingUser.interests.length > 0) {
-        const commonInterests = interests.filter(i => waitingUser.interests.includes(i));
-        if (commonInterests.length > 0) return waitingId;
-      }
+      if (waitingId === userId) continue;
+      if (waitingUser.interests.length === 0) continue;
+
+      const waitingNormalized = waitingUser.interests.map(i => i.toLowerCase().trim());
+      const hasCommon = normalizedInterests.some(i => waitingNormalized.includes(i));
+      if (hasCommon) return waitingId;
+    }
+
+    // If still within 15s, DON'T fallback — keep waiting for interest match
+    if (userWaitTime < INTEREST_MATCH_TIMEOUT) {
+      return null;
     }
   }
 
-  // Second pass: match with anyone who has no interests OR after waiting 10s
+  // Pass 2: Fallback — match with anyone (user has no interests OR waited >15s)
   for (const [waitingId, waitingUser] of waitingUsers) {
-    if (waitingId !== userId) {
-      // Match if either has no interests, or if waiting user has been waiting > 10s
-      if (interests.length === 0 || waitingUser.interests.length === 0 ||
-        Date.now() - waitingUser.timestamp > 10000) {
-        return waitingId;
-      }
+    if (waitingId === userId) continue;
+
+    // The other user also needs to have timed out if they have interests
+    if (waitingUser.interests.length > 0 && Date.now() - waitingUser.timestamp < INTEREST_MATCH_TIMEOUT) {
+      continue; // They're still waiting for interest match, skip them
     }
+
+    return waitingId;
   }
+
   return null;
 }
 
@@ -452,3 +470,17 @@ setInterval(() => {
     }
   }
 }, 30000);
+
+// Periodic matchmaking sweep — for users whose interest timeout expired
+setInterval(() => {
+  for (const [userId, waitingUser] of waitingUsers) {
+    const matchId = findMatch(userId, waitingUser.interests);
+    if (matchId) {
+      waitingUsers.delete(matchId);
+      waitingUsers.delete(userId);
+      pairUsers(userId, matchId);
+      console.log(`Sweep matched: ${userId} <-> ${matchId}`);
+      break; // One match per sweep to avoid iterator issues
+    }
+  }
+}, 3000);
