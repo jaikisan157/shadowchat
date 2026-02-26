@@ -162,17 +162,21 @@ export function ChatSection({
     setAutoReconnect(0);
   }, []);
 
-  // Keyboard shortcut: Esc to stop chat
+  // Keyboard shortcut: Esc to stop (when matched) or new chat (when disconnected)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && chatState.status === 'matched') {
+      if (e.key === 'Escape') {
         e.preventDefault();
-        onStopChat();
+        if (chatState.status === 'matched') {
+          onStopChat();
+        } else if (chatState.status === 'disconnected' || chatState.status === 'idle') {
+          handleNewChat();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [chatState.status, onStopChat]);
+  }, [chatState.status, onStopChat, handleNewChat]);
 
   // Track when match starts
   useEffect(() => {

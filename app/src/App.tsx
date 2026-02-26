@@ -44,6 +44,7 @@ function App() {
   // Handle start chat from hero
   const handleStartChat = useCallback(() => {
     setShowChat(true);
+    window.history.pushState({ chat: true }, '', '#chat');
     // Start searching immediately
     setTimeout(() => {
       findMatch();
@@ -59,7 +60,23 @@ function App() {
   const handleGoHome = useCallback(() => {
     stopChat();
     setShowChat(false);
+    // Clean up the URL hash
+    if (window.location.hash === '#chat') {
+      window.history.back();
+    }
   }, [stopChat]);
+
+  // Browser back button → go to hero
+  useEffect(() => {
+    const handlePopState = () => {
+      if (showChat) {
+        stopChat();
+        setShowChat(false);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [showChat, stopChat]);
 
   // Scroll animation setup
   useEffect(() => {
