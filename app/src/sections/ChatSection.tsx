@@ -543,8 +543,7 @@ export function ChatSection({
       {showLeaveConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={() => setShowLeaveConfirm(false)}>
           <div className="bg-dark-card border border-white/10 rounded-xl p-6 max-w-[min(20rem,90vw)] shadow-2xl animate-fade-in-up" onClick={e => e.stopPropagation()}>
-            <p className="font-heading font-semibold text-text-primary text-base mb-2">Leave this chat?</p>
-            <p className="text-text-secondary text-sm mb-5">You've been chatting for a while. Are you sure you want to find someone new?</p>
+            <p className="font-heading font-semibold text-text-primary text-base mb-5">Leave this chat?</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLeaveConfirm(false)}
