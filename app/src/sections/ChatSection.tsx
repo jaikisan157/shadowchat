@@ -182,7 +182,7 @@ export function ChatSection({
   }, []);
 
   const handleTouchEnd = useCallback(() => {
-    if (swipeOffset < -100) {
+    if (swipeOffset < -50) {
       // Swiped far enough left — trigger skip
       trySkip();
     }
@@ -329,10 +329,10 @@ export function ChatSection({
       >
         <div
           className="chat-area flex-1 rounded-lg overflow-hidden flex flex-col transition-transform duration-100"
-          style={{ transform: swipeOffset < -10 ? `translateX(${swipeOffset * 0.3}px)` : 'none', opacity: swipeOffset < -50 ? 0.8 : 1 }}
+          style={{ transform: swipeOffset < -5 ? `translateX(${swipeOffset * 0.4}px)` : 'none', opacity: swipeOffset < -25 ? 0.8 : 1 }}
         >
           {/* Swipe hint indicator */}
-          {swipeOffset < -50 && (
+          {swipeOffset < -25 && (
             <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10 font-mono text-xs text-neon-cyan animate-fade-in-up">
               ← Skip
             </div>
