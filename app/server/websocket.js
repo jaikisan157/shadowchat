@@ -284,11 +284,11 @@ wss.on('connection', (ws, req) => {
     disconnectUser(userId);
   });
 
-  // Heartbeat: ping every 15 seconds, terminate if no pong received
-  let isAlive = true;
+  // Heartbeat: ping every 30 seconds, allow 2 missed pongs before terminating
+  let missedPongs = 0;
 
   ws.on('pong', () => {
-    isAlive = true;
+    missedPongs = 0;
   });
 
   const pingInterval = setInterval(() => {
@@ -297,17 +297,17 @@ wss.on('connection', (ws, req) => {
       return;
     }
 
-    if (!isAlive) {
-      // Connection is dead - no pong received since last ping
+    missedPongs++;
+    if (missedPongs > 2) {
+      // Connection is dead - 2+ pongs missed (~60s unresponsive)
       console.log(`Heartbeat failed for user ${userId}, terminating`);
       clearInterval(pingInterval);
-      ws.terminate(); // force close, triggers 'close' event
+      ws.terminate();
       return;
     }
 
-    isAlive = false;
     ws.ping();
-  }, 10000);
+  }, 30000);
 
   ws.on('close', () => {
     clearInterval(pingInterval);

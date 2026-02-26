@@ -219,13 +219,12 @@ export function ChatSection({
                     )}
                   </div>
 
-                  {/* Emoji Picker - always opens toward center of screen */}
+                  {/* Emoji Picker */}
                   {activeReactionId === message.id && (
-                    <div className="absolute left-0 z-50">
+                    <div className={`absolute ${message.sender === 'user' ? 'right-0' : 'left-0'} z-50`}>
                       <EmojiPicker
                         onSelect={(emoji) => onSendReaction(message.id, emoji)}
                         onClose={() => setActiveReactionId(null)}
-                        position="above"
                       />
                     </div>
                   )}
