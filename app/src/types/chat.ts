@@ -44,7 +44,7 @@ export type WebSocketMessage =
   | { type: 'game_leave'; game: string; data?: unknown }
   | { type: 'error'; message: string };
 
-export type GameType = 'tictactoe' | 'rps';
+export type GameType = 'tictactoe' | 'rps' | 'truthdare' | 'wyr' | 'connect4';
 
 export interface UseWebSocketReturn {
   connected: boolean;
