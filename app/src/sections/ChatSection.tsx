@@ -208,20 +208,20 @@ export function ChatSection({
                       {message.text}
                     </div>
 
-                    {/* Reaction Button */}
+                    {/* Reaction Button - visible on mobile, hover on desktop */}
                     {message.sender !== 'system' && chatState.status === 'matched' && (
                       <button
                         onClick={() => setActiveReactionId(activeReactionId === message.id ? null : message.id)}
-                        className="flex items-center justify-center w-6 h-6 rounded-full hover:bg-white/10 transition-all opacity-40 md:opacity-0 group-hover:opacity-100 shrink-0"
+                        className="flex items-center justify-center w-7 h-7 rounded-full hover:bg-white/10 transition-all opacity-60 md:opacity-0 group-hover:opacity-100 shrink-0"
                       >
-                        <Smile className="w-3.5 h-3.5 text-text-secondary" />
+                        <Smile className="w-4 h-4 text-text-secondary" />
                       </button>
                     )}
                   </div>
 
-                  {/* Emoji Picker */}
+                  {/* Emoji Picker - always opens toward center of screen */}
                   {activeReactionId === message.id && (
-                    <div className={`absolute ${message.sender === 'user' ? 'right-0' : 'left-0'} z-50`}>
+                    <div className="absolute left-0 z-50">
                       <EmojiPicker
                         onSelect={(emoji) => onSendReaction(message.id, emoji)}
                         onClose={() => setActiveReactionId(null)}
@@ -231,20 +231,15 @@ export function ChatSection({
                   )}
                 </div>
 
-                {/* Reactions Display */}
+                {/* Reactions Display - one per user */}
                 {message.reactions && message.reactions.length > 0 && (
-                  <div className={`flex flex-wrap gap-1 mt-1 px-1 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    {Object.entries(
-                      message.reactions.reduce((acc, r) => {
-                        acc[r.emoji] = (acc[r.emoji] || 0) + 1;
-                        return acc;
-                      }, {} as Record<string, number>)
-                    ).map(([emoji, count]) => (
+                  <div className={`flex gap-1 mt-1 px-1 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    {message.reactions.map((r, i) => (
                       <span
-                        key={emoji}
-                        className="inline-flex items-center gap-0.5 bg-dark-input border border-white/10 rounded-full px-1.5 py-0.5 text-xs"
+                        key={`${r.emoji}-${r.from}-${i}`}
+                        className="bg-dark-input border border-white/10 rounded-full px-1.5 py-0.5 text-sm"
                       >
-                        {emoji}{count > 1 && <span className="text-[10px] text-text-secondary">{count}</span>}
+                        {r.emoji}
                       </span>
                     ))}
                   </div>

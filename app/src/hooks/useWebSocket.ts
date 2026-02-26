@@ -304,8 +304,9 @@ export function useWebSocket(): {
             msg.id === data.messageId
               ? {
                 ...msg,
+                // Replace stranger's previous reaction (only one allowed)
                 reactions: [
-                  ...(msg.reactions || []),
+                  ...(msg.reactions || []).filter(r => r.from !== 'stranger'),
                   { emoji: data.emoji, from: 'stranger' as const },
                 ],
               }
@@ -432,7 +433,7 @@ export function useWebSocket(): {
         messageId,
         emoji,
       }));
-      // Add to local state immediately
+      // Replace user's previous reaction (only one allowed)
       setChatState(prev => ({
         ...prev,
         messages: prev.messages.map(msg =>
@@ -440,7 +441,7 @@ export function useWebSocket(): {
             ? {
               ...msg,
               reactions: [
-                ...(msg.reactions || []),
+                ...(msg.reactions || []).filter(r => r.from !== 'user'),
                 { emoji, from: 'user' as const },
               ],
             }
