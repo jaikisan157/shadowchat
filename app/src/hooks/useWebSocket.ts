@@ -190,7 +190,7 @@ export function useWebSocket(): {
           messages: [
             ...prev.messages,
             {
-              id: generateMessageId(),
+              id: data.messageId || generateMessageId(),
               text: data.text,
               sender: 'stranger',
               timestamp: data.timestamp,
@@ -205,7 +205,7 @@ export function useWebSocket(): {
           messages: [
             ...prev.messages,
             {
-              id: generateMessageId(),
+              id: data.messageId || generateMessageId(),
               text: data.text,
               sender: 'user',
               timestamp: data.timestamp,

@@ -176,21 +176,25 @@ wss.on('connection', (ws, req) => {
         case 'message':
           const partnerId = activePairs.get(userId);
           if (partnerId) {
+            const msgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
+            const ts = Date.now();
             const partnerWs = userSockets.get(partnerId);
             if (partnerWs && partnerWs.readyState === 1) {
               partnerWs.send(JSON.stringify({
                 type: 'message',
                 from: 'stranger',
                 text: message.text,
-                timestamp: Date.now()
+                messageId: msgId,
+                timestamp: ts
               }));
             }
 
-            // Confirm to sender
+            // Confirm to sender with same messageId
             ws.send(JSON.stringify({
               type: 'message_sent',
               text: message.text,
-              timestamp: Date.now()
+              messageId: msgId,
+              timestamp: ts
             }));
           }
           break;

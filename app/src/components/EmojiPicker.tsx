@@ -28,11 +28,37 @@ interface EmojiPickerProps {
     position?: 'above' | 'below';
 }
 
-export function EmojiPicker({ onSelect, onClose, position = 'above' }: EmojiPickerProps) {
+export function EmojiPicker({ onSelect, onClose }: EmojiPickerProps) {
     const [showFull, setShowFull] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const pickerRef = useRef<HTMLDivElement>(null);
     const searchRef = useRef<HTMLInputElement>(null);
+    const [pickerStyle, setPickerStyle] = useState<React.CSSProperties>({});
+
+    // Position picker to stay on screen
+    useEffect(() => {
+        if (pickerRef.current) {
+            const rect = pickerRef.current.getBoundingClientRect();
+            const style: React.CSSProperties = {};
+
+            // Keep within horizontal bounds
+            if (rect.right > window.innerWidth) {
+                style.transform = `translateX(-${rect.right - window.innerWidth + 8}px)`;
+            }
+            if (rect.left < 0) {
+                style.transform = `translateX(${-rect.left + 8}px)`;
+            }
+
+            // If above goes off top, show below
+            if (rect.top < 0) {
+                style.top = '100%';
+                style.bottom = 'auto';
+                style.marginTop = '8px';
+            }
+
+            setPickerStyle(style);
+        }
+    }, [showFull]);
 
     // Close on outside click
     useEffect(() => {
@@ -67,10 +93,8 @@ export function EmojiPicker({ onSelect, onClose, position = 'above' }: EmojiPick
         })).filter(cat => cat.emojis.length > 0)
         : EMOJI_CATEGORIES;
 
-    const positionClass = position === 'above' ? 'bottom-full mb-2' : 'top-full mt-2';
-
     return (
-        <div ref={pickerRef} className={`absolute ${positionClass} left-0 z-50`}>
+        <div ref={pickerRef} className="absolute bottom-full mb-2 left-0 z-50" style={pickerStyle}>
             {/* Quick Reactions */}
             {!showFull && (
                 <div className="flex items-center gap-1 bg-dark-card border border-white/10 rounded-full px-2 py-1.5 shadow-lg animate-fade-in-up">
@@ -85,7 +109,7 @@ export function EmojiPicker({ onSelect, onClose, position = 'above' }: EmojiPick
                     ))}
                     <button
                         onClick={() => setShowFull(true)}
-                        className="w-8 h-8 flex items-center justify-center text-xs text-text-secondary hover:text-text-primary hover:bg-white/10 rounded-full transition-colors"
+                        className="w-8 h-8 flex items-center justify-center text-xs text-text-secondary hover:text-text-primary hover:bg-white/10 rounded-full transition-colors font-bold"
                     >
                         +
                     </button>
@@ -94,7 +118,7 @@ export function EmojiPicker({ onSelect, onClose, position = 'above' }: EmojiPick
 
             {/* Full Emoji Picker */}
             {showFull && (
-                <div className="w-72 max-h-80 bg-dark-card border border-white/10 rounded-lg shadow-xl overflow-hidden animate-fade-in-up">
+                <div className="w-[min(18rem,calc(100vw-2rem))] max-h-72 bg-dark-card border border-white/10 rounded-lg shadow-xl overflow-hidden animate-fade-in-up">
                     {/* Search Bar */}
                     <div className="p-2 border-b border-white/10">
                         <div className="flex items-center gap-2 bg-dark-input rounded-md px-2 py-1.5">
@@ -116,13 +140,13 @@ export function EmojiPicker({ onSelect, onClose, position = 'above' }: EmojiPick
                     </div>
 
                     {/* Emoji Grid */}
-                    <div className="overflow-y-auto max-h-60 p-2">
+                    <div className="overflow-y-auto max-h-52 p-2">
                         {filteredCategories.map((category) => (
                             <div key={category.name} className="mb-3">
                                 <span className="font-mono text-[10px] text-text-secondary/60 uppercase tracking-wider px-1">
                                     {category.name}
                                 </span>
-                                <div className="grid grid-cols-8 gap-0.5 mt-1">
+                                <div className="grid grid-cols-7 gap-0.5 mt-1">
                                     {category.emojis.map((emoji, i) => (
                                         <button
                                             key={`${emoji}-${i}`}
