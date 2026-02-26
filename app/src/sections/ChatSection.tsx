@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Square, MessageCircle, Users, Smile, Sun, Moon } from 'lucide-react';
 import { EmojiPicker } from '@/components/EmojiPicker';
+import { NetworkIndicator } from '@/components/NetworkIndicator';
 import type { Message } from '@/types/chat';
 
 interface ChatSectionProps {
@@ -18,6 +19,7 @@ interface ChatSectionProps {
   onNewChat: () => void;
   isDark: boolean;
   toggleTheme: () => void;
+  connected: boolean;
 }
 
 export function ChatSection({
@@ -28,7 +30,8 @@ export function ChatSection({
   onStopChat,
   onNewChat,
   isDark,
-  toggleTheme
+  toggleTheme,
+  connected
 }: ChatSectionProps) {
   const [inputText, setInputText] = useState('');
   const [newChatCooldown, setNewChatCooldown] = useState(0);
@@ -138,6 +141,7 @@ export function ChatSection({
           <span className="font-heading font-semibold text-base md:text-lg text-text-primary">
             ShadowChat
           </span>
+          <NetworkIndicator wsConnected={connected} />
         </div>
 
         {/* Center Status */}

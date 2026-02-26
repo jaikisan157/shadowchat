@@ -38,20 +38,20 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Custom neon colors
+        // Custom neon colors - use CSS vars for theme support
         neon: {
-          cyan: '#00F0FF',
-          green: '#00FF88',
+          cyan: 'var(--neon-cyan)',
+          green: 'var(--neon-green)',
         },
         dark: {
-          bg: '#000000',
-          card: '#0B0B0B',
-          bubble: '#1A1A1A',
-          input: '#141414',
+          bg: 'var(--dark-bg)',
+          card: 'var(--dark-card)',
+          bubble: 'var(--dark-bubble)',
+          input: 'var(--dark-input)',
         },
         text: {
-          primary: '#F6F6F6',
-          secondary: '#B8B8B8',
+          primary: 'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
         },
       },
       fontFamily: {

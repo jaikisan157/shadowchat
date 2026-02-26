@@ -127,6 +127,7 @@ function App() {
             onNewChat={handleNewChat}
             isDark={isDark}
             toggleTheme={toggleTheme}
+            connected={connected}
           />
         </div>
       )}
