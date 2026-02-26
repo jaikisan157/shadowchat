@@ -137,19 +137,25 @@ export function useWebSocket(): {
         break;
 
       case 'waiting':
-        setChatState(prev => ({
-          ...prev,
-          status: 'searching',
-          messages: [
-            ...prev.messages,
-            {
-              id: generateMessageId(),
-              text: data.message,
-              sender: 'system',
-              timestamp: Date.now(),
-            },
-          ],
-        }));
+        setChatState(prev => {
+          // Filter out any previous "Looking for" messages to avoid duplicates
+          const filteredMessages = prev.messages.filter(
+            m => !(m.sender === 'system' && m.text.includes('Looking for'))
+          );
+          return {
+            ...prev,
+            status: 'searching',
+            messages: [
+              ...filteredMessages,
+              {
+                id: generateMessageId(),
+                text: data.message,
+                sender: 'system',
+                timestamp: Date.now(),
+              },
+            ],
+          };
+        });
         break;
 
       case 'matched':
