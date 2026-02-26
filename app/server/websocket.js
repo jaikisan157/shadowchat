@@ -352,29 +352,60 @@ wss.on('connection', (ws, req) => {
 
             // If partner is a bot, get bot response
             if (botService && botService.isBot(partnerId)) {
-              // Show typing indicator
+              // Show typing indicator after a short read delay
+              const readDelay = 300 + Math.random() * 700;
               setTimeout(() => {
+                if (!activePairs.has(userId) || ws.readyState !== 1) return;
                 ws.send(JSON.stringify({ type: 'typing', isTyping: true }));
-              }, 300 + Math.random() * 700);
+              }, readDelay);
 
               // Get bot response with realistic delay
               botService.getResponse(partnerId, message.text).then(botReply => {
-                if (!botReply || !activePairs.has(userId)) return;
+                if (!activePairs.has(userId)) return;
+
+                // Bot wants to disconnect
+                if (botService.shouldDisconnect(partnerId)) {
+                  const dcDelay = botReply ? botService.getTypingDelay(botReply) : 1000;
+                  setTimeout(() => {
+                    if (!activePairs.has(userId) || ws.readyState !== 1) return;
+                    ws.send(JSON.stringify({ type: 'typing', isTyping: false }));
+
+                    // Send goodbye message if bot has one
+                    if (botReply) {
+                      const botMsgId = 'msg-' + Date.now() + '-bot';
+                      ws.send(JSON.stringify({
+                        type: 'message', from: 'stranger', text: botReply,
+                        messageId: botMsgId, timestamp: Date.now()
+                      }));
+                    }
+
+                    // Disconnect after a short pause
+                    setTimeout(() => {
+                      if (!activePairs.has(userId) || ws.readyState !== 1) return;
+                      ws.send(JSON.stringify({
+                        type: 'partner_disconnected',
+                        message: 'Stranger has disconnected.'
+                      }));
+                      botService.removeBot(partnerId);
+                      activePairs.delete(partnerId);
+                      activePairs.delete(userId);
+                      userSockets.delete(partnerId);
+                    }, 1000 + Math.random() * 2000);
+                  }, dcDelay);
+                  return;
+                }
+
+                if (!botReply) return;
                 const delay = botService.getTypingDelay(botReply);
 
                 setTimeout(() => {
-                  if (!activePairs.has(userId)) return;
-                  // Stop typing
+                  if (!activePairs.has(userId) || ws.readyState !== 1) return;
                   ws.send(JSON.stringify({ type: 'typing', isTyping: false }));
 
-                  // Send bot message
                   const botMsgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
                   ws.send(JSON.stringify({
-                    type: 'message',
-                    from: 'stranger',
-                    text: botReply,
-                    messageId: botMsgId,
-                    timestamp: Date.now()
+                    type: 'message', from: 'stranger', text: botReply,
+                    messageId: botMsgId, timestamp: Date.now()
                   }));
                 }, delay);
               });
@@ -576,8 +607,8 @@ setInterval(() => {
   }
 }, 3000);
 
-// Bot fallback — if user has been waiting 30s+ with no match, pair with bot
-const BOT_FALLBACK_TIMEOUT = 30000;
+// Bot fallback — if user has been waiting 5s+ with no match, pair with bot
+const BOT_FALLBACK_TIMEOUT = 5000;
 setInterval(() => {
   if (!botService) return;
 
