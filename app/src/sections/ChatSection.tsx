@@ -556,6 +556,12 @@ export function ChatSection({
                 <Send className="w-4 h-4 md:w-5 md:h-5" />
               </button>
             </div>
+            {/* Swipe hint — mobile only, low opacity */}
+            {chatState.status === 'matched' && (
+              <p className="md:hidden text-center font-mono text-[9px] text-text-secondary/25 mt-1 pb-0.5 select-none">
+                ← swipe left to skip
+              </p>
+            )}
           </div>
         </div>
       </div>
