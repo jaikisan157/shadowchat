@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
-import { ChevronRight, Sun, Moon } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 import type { InterestStat } from '@/types/chat';
 
 interface HeroSectionProps {
@@ -20,7 +20,6 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, int
   const subheadRef = useRef<HTMLParagraphElement>(null);
   const ctaRef = useRef<HTMLButtonElement>(null);
   const microRef = useRef<HTMLSpanElement>(null);
-  const chevronsRef = useRef<HTMLDivElement>(null);
 
   const toggleInterest = (interest: string) => {
     setSelectedInterests(prev =>
@@ -44,7 +43,6 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, int
       gsap.set(subheadRef.current, { opacity: 0, y: 14 });
       gsap.set(ctaRef.current, { opacity: 0, y: 14 });
       gsap.set(microRef.current, { opacity: 0 });
-      gsap.set('.chevron-item', { opacity: 0, x: 12, scale: 0.98 });
       gsap.set('.interest-section', { opacity: 0, y: 10 });
 
       const tl = gsap.timeline({ delay: 0.3 });
@@ -62,10 +60,7 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, int
         }, '-=0.2')
         .to(microRef.current, {
           opacity: 1, duration: 0.5,
-        }, '-=0.2')
-        .to('.chevron-item', {
-          opacity: 1, x: 0, scale: 1, duration: 0.5, stagger: 0.1, ease: 'power2.out',
-        }, '-=0.4');
+        }, '-=0.2');
     }, containerRef);
 
     return () => ctx.revert();
@@ -85,7 +80,7 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, int
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-screen flex flex-col justify-center overflow-hidden"
+      className="relative w-full min-h-screen flex flex-col overflow-hidden"
       style={{ background: 'var(--dark-bg)' }}
     >
       {/* Logo */}
@@ -109,7 +104,8 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, int
       </div>
 
       {/* Main Content — two-column on desktop */}
-      <div className="pl-[5vw] pr-[5vw] flex flex-col md:flex-row md:items-center md:gap-[4vw]">
+      <div className="flex-1 flex flex-col justify-center pl-[5vw] pr-[5vw] pt-[10vh] pb-4 md:py-0">
+      <div className="flex flex-col md:flex-row md:items-center md:gap-[4vw]">
         {/* Left column: headline + subhead + CTA */}
         <div className="flex-shrink-0 md:max-w-[45%]">
           <div ref={headlineRef} className="mb-3 md:mb-5">
@@ -243,19 +239,10 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, int
           </div>
         </div>
       </div>
-
-      {/* Decorative Chevrons */}
-      <div
-        ref={chevronsRef}
-        className="absolute right-[6vw] top-1/2 -translate-y-1/2 hidden md:flex flex-col gap-2"
-      >
-        <ChevronRight className="chevron-item w-8 h-8 stroke-[2]" style={{ color: 'var(--text-secondary)', opacity: 0.3 }} />
-        <ChevronRight className="chevron-item w-8 h-8 stroke-[2]" style={{ color: 'var(--text-secondary)', opacity: 0.2 }} />
-        <ChevronRight className="chevron-item w-8 h-8 stroke-[2]" style={{ color: 'var(--text-secondary)', opacity: 0.1 }} />
       </div>
 
-      {/* Online Counter */}
-      <div className="absolute bottom-[3vh] right-[5vw] flex items-center gap-4">
+      {/* Online Counter — in-flow at the bottom, always visible */}
+      <div className="flex items-center gap-4 pl-[5vw] pb-[3vh] pt-3">
         {onlineCount > 0 && (
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-neon-cyan animate-pulse" />
