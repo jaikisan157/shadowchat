@@ -330,7 +330,7 @@ export function ChatSection({
               chatState.status === 'disconnected' || chatState.status === 'error' ? 'bg-red-500' :
                 'bg-text-secondary/50'
             }`} />
-          <span className="font-mono text-[9px] md:text-xs text-text-secondary uppercase tracking-wider truncate">
+          <span className="font-mono text-[10px] md:text-xs text-text-secondary uppercase tracking-wider truncate">
             {getStatusText()}
           </span>
         </div>
@@ -558,7 +558,7 @@ export function ChatSection({
             </div>
             {/* Swipe hint — mobile only, low opacity */}
             {chatState.status === 'matched' && (
-              <p className="md:hidden text-center font-mono text-[9px] text-text-secondary/25 mt-1 pb-0.5 select-none">
+              <p className="md:hidden text-center font-mono text-[10px] text-text-secondary/25 mt-1 pb-0.5 select-none">
                 ← swipe left to skip
               </p>
             )}

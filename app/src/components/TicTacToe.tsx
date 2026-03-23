@@ -32,7 +32,7 @@ export function TicTacToe({ isMyTurn, mySymbol, onMove, onLeave, board, winner, 
     return (
         <div className="flex flex-col items-center gap-4">
             {/* Header */}
-            <div className="flex items-center justify-between w-full max-w-[280px]">
+            <div className="flex items-center justify-between w-full max-w-[min(280px,94vw)]">
                 <div className="flex items-center gap-2">
                     <span className="font-heading font-bold text-lg text-text-primary">Tic-Tac-Toe</span>
                 </div>

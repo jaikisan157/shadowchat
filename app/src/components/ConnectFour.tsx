@@ -30,7 +30,7 @@ export function ConnectFour({ board, myColor, isMyTurn, onDrop, onLeave, winner,
     return (
         <div className="flex flex-col items-center gap-3">
             {/* Header */}
-            <div className="flex items-center justify-between w-full max-w-[290px]">
+            <div className="flex items-center justify-between w-full max-w-[min(290px,94vw)]">
                 <span className="font-heading font-bold text-lg text-text-primary">Connect Four</span>
                 <button
                     onClick={onLeave}
@@ -47,7 +47,7 @@ export function ConnectFour({ board, myColor, isMyTurn, onDrop, onLeave, winner,
             </div>
 
             {/* Board */}
-            <div className="bg-blue-900/30 border border-blue-500/20 rounded-xl p-1.5 md:p-2">
+            <div className="bg-blue-900/30 border border-blue-500/20 rounded-xl p-1 md:p-2">
                 {/* Column drop buttons */}
                 <div className="grid grid-cols-7 gap-1 mb-1">
                     {Array.from({ length: 7 }, (_, col) => (
@@ -69,7 +69,7 @@ export function ConnectFour({ board, myColor, isMyTurn, onDrop, onLeave, winner,
                             <button
                                 key={`${r}-${c}`}
                                 onClick={() => canDrop(c) && onDrop(c)}
-                                className={`w-8 h-8 md:w-9 md:h-9 rounded-full border transition-all ${cell === 'R'
+                                className={`w-7 h-7 md:w-9 md:h-9 rounded-full border transition-all ${cell === 'R'
                                     ? 'bg-red-500 border-red-400 shadow-[0_0_8px_rgba(239,68,68,0.3)]'
                                     : cell === 'Y'
                                         ? 'bg-yellow-400 border-yellow-300 shadow-[0_0_8px_rgba(250,204,21,0.3)]'

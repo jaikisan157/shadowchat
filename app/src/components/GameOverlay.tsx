@@ -247,7 +247,7 @@ export function GameOverlay({ sendGameMessage, setGameHandler, isMatched, onPart
     if (gameState.phase === 'menu') {
         return (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={() => setGameState({ phase: 'idle' })}>
-                <div className="bg-dark-card border border-white/10 rounded-xl p-5 max-w-[min(20rem,90vw)] shadow-2xl animate-fade-in-up" onClick={e => e.stopPropagation()}>
+                <div className="bg-dark-card border border-white/10 rounded-xl p-4 md:p-5 max-w-[min(20rem,90vw)] shadow-2xl animate-fade-in-up" onClick={e => e.stopPropagation()}>
                     <p className="font-heading font-semibold text-text-primary text-base mb-4 flex items-center gap-2">
                         <Gamepad2 className="w-5 h-5 text-neon-cyan" /> Play a Game
                     </p>
@@ -281,7 +281,7 @@ export function GameOverlay({ sendGameMessage, setGameHandler, isMatched, onPart
     if (gameState.phase === 'invite_sent') {
         return (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
-                <div className="bg-dark-card border border-white/10 rounded-xl p-5 max-w-[min(18rem,90vw)] shadow-2xl animate-fade-in-up text-center">
+                <div className="bg-dark-card border border-white/10 rounded-xl p-4 md:p-5 max-w-[min(18rem,90vw)] shadow-2xl animate-fade-in-up text-center">
                     <div className="flex justify-center gap-1 mb-3">
                         <div className="w-2 h-2 rounded-full bg-neon-cyan animate-bounce" style={{ animationDelay: '0ms' }} />
                         <div className="w-2 h-2 rounded-full bg-neon-cyan animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -301,7 +301,7 @@ export function GameOverlay({ sendGameMessage, setGameHandler, isMatched, onPart
     if (gameState.phase === 'invite_received') {
         return (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
-                <div className="bg-dark-card border border-white/10 rounded-xl p-5 max-w-[min(18rem,90vw)] shadow-2xl animate-fade-in-up text-center">
+                <div className="bg-dark-card border border-white/10 rounded-xl p-4 md:p-5 max-w-[min(18rem,90vw)] shadow-2xl animate-fade-in-up text-center">
                     <Gamepad2 className="w-8 h-8 text-neon-cyan mx-auto mb-3" />
                     <p className="font-mono text-sm text-text-primary mb-1">Stranger wants to play</p>
                     <p className="font-mono text-xs text-neon-cyan mb-4">{GAME_NAMES[gameState.game]}</p>
@@ -318,7 +318,7 @@ export function GameOverlay({ sendGameMessage, setGameHandler, isMatched, onPart
     if (gameState.phase === 'playing') {
         return (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-                <div className="bg-dark-card border border-white/10 rounded-xl p-5 shadow-2xl animate-fade-in-up max-h-[90vh] overflow-y-auto">
+                <div className="bg-dark-card border border-white/10 rounded-xl p-4 md:p-5 shadow-2xl animate-fade-in-up max-h-[90vh] overflow-y-auto">
                     {gameState.game === 'tictactoe' && (
                         <TicTacToe isMyTurn={tttTurn === tttMySymbol} mySymbol={tttMySymbol} onMove={handleTTTMove} onLeave={leaveGame} board={tttBoard} winner={tttWinner} gameOver={!!tttWinner} />
                     )}

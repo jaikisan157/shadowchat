@@ -80,169 +80,170 @@ export function HeroSection({ onStartChat, onlineCount, isDark, toggleTheme, int
   return (
     <div
       ref={containerRef}
-      className="relative w-full min-h-screen flex flex-col overflow-hidden"
+      className="relative w-full min-h-screen flex flex-col"
       style={{ background: 'var(--dark-bg)' }}
     >
-      {/* Logo */}
-      <div className="absolute left-[5vw] top-[3vh]">
-        <span className="font-heading font-semibold text-lg text-text-primary tracking-tight">
+      {/* Fixed-height top nav bar */}
+      <header className="flex items-center justify-between px-5 h-14 shrink-0">
+        <span className="font-heading font-semibold text-base text-text-primary tracking-tight">
           ShadowChat
         </span>
-      </div>
-
-      {/* Theme Toggle */}
-      <div className="absolute right-[5vw] top-[2.5vh]">
         <button
           onClick={toggleTheme}
-          className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-all border border-white/10"
+          className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 active:bg-white/15 transition-all border border-white/10"
           title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
           {isDark
             ? <Sun className="w-4 h-4 text-text-secondary" />
             : <Moon className="w-4 h-4 text-text-secondary" />}
         </button>
-      </div>
+      </header>
 
-      {/* Main Content — two-column on desktop */}
-      <div className="flex-1 flex flex-col justify-center pl-[5vw] pr-[5vw] pt-[10vh] pb-4 md:py-0">
-      <div className="flex flex-col md:flex-row md:items-center md:gap-[4vw]">
-        {/* Left column: headline + subhead + CTA */}
-        <div className="flex-shrink-0 md:max-w-[45%]">
-          <div ref={headlineRef} className="mb-3 md:mb-5">
-            <h1 className="font-heading font-bold uppercase tracking-tight leading-[0.92]"
-              style={{ fontSize: 'clamp(36px, 5vw, 72px)' }}>
-              <div className="headline-line text-text-primary">TALK</div>
-              <div className="headline-line text-text-primary">TO</div>
-              <div className="headline-line text-neon-cyan neon-text">STRANGERS</div>
-            </h1>
-          </div>
+      {/* Scrollable main content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-5 pt-6 pb-4 flex flex-col md:flex-row md:items-center md:gap-[4vw] md:min-h-[calc(100vh-56px)]">
 
-          <p
-            ref={subheadRef}
-            className="text-text-secondary text-xs md:text-sm max-w-sm mb-4 md:mb-5 leading-relaxed"
-          >
-            Anonymous, one-on-one, no accounts. Pick your interests to find like-minded people.
-          </p>
-
-          {/* CTA Button */}
-          <button
-            ref={ctaRef}
-            onClick={() => onStartChat(selectedInterests)}
-            className="btn-neon bg-neon-cyan text-black font-heading font-semibold text-sm md:text-base px-8 py-3 rounded-md mb-2 neon-glow hover:shadow-neon-strong transition-all"
-            style={{ minWidth: '180px' }}
-          >
-            {selectedInterests.length > 0 ? `Start Chat (${selectedInterests.length})` : 'Start Chat'}
-          </button>
-
-          <div>
-            <span ref={microRef} className="font-mono text-[10px] text-text-secondary/55">
-              Or press Space
-            </span>
-          </div>
-
-          {/* Explore More */}
-          <button
-            onClick={() => setShowMore(prev => !prev)}
-            className="mt-3 font-mono text-[10px] text-text-secondary/50 hover:text-neon-cyan transition-colors flex items-center gap-1"
-          >
-            <span className={`transition-transform inline-block ${showMore ? 'rotate-90' : ''}`}>▶</span>
-            {showMore ? 'Hide' : 'Explore more features'}
-          </button>
-
-          {showMore && (
-            <div className="mt-2 grid grid-cols-2 gap-1.5 max-w-[320px] animate-fade-in-up">
-              {[
-                { icon: '📹', name: 'Video Chat', desc: 'Face-to-face' },
-                { icon: '🎙️', name: 'Voice Rooms', desc: 'Audio only' },
-                { icon: '👥', name: 'Group Chat', desc: 'Up to 5 people' },
-                { icon: '🪪', name: 'Profile Cards', desc: 'Share your vibe' },
-                { icon: '🏆', name: 'Leaderboard', desc: 'Top chatters' },
-                { icon: '💎', name: 'Premium Filters', desc: 'Gender, location' },
-              ].map(f => (
-                <div
-                  key={f.name}
-                  className="relative px-2.5 py-2 rounded-lg border border-white/5 bg-white/[0.02] opacity-40 cursor-not-allowed select-none"
-                >
-                  <div className="font-mono text-[10px] text-text-secondary flex items-center gap-1.5">
-                    <span>{f.icon}</span>
-                    <span>{f.name}</span>
-                  </div>
-                  <div className="font-mono text-[8px] text-text-secondary/30 mt-0.5 ml-5">{f.desc}</div>
-                  <div className="absolute top-1 right-1.5 font-mono text-[7px] text-text-secondary/30 bg-white/5 px-1 py-0.5 rounded">
-                    🔒 Soon
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Right column: Interest picker */}
-        <div className="interest-section mt-5 md:mt-0 md:max-w-[420px]">
-          <p className="font-mono text-[10px] text-text-secondary/60 mb-1.5 uppercase tracking-wider">
-            Pick or type interests · optional · max 5
-          </p>
-          {/* Custom interest input */}
-          <div className="flex gap-2 mb-2">
-            <input
-              type="text"
-              value={customInput}
-              onChange={e => setCustomInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); addCustomInterest(); } }}
-              placeholder="Type your own..."
-              maxLength={20}
-              className="flex-1 bg-white/5 border border-white/10 rounded-full px-3 py-1 font-mono text-[10px] text-text-primary placeholder:text-text-secondary/40 focus:border-neon-cyan/50 focus:outline-none transition-colors"
-            />
-            {customInput.trim() && (
-              <button
-                onClick={addCustomInterest}
-                className="px-3 py-1 rounded-full font-mono text-[10px] bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/50 hover:bg-neon-cyan/30 transition-colors"
+          {/* Left column: headline + CTA */}
+          <div className="flex-shrink-0 md:max-w-[45%]">
+            <div ref={headlineRef} className="mb-4">
+              <h1
+                className="font-heading font-bold uppercase tracking-tight leading-[0.92]"
+                style={{ fontSize: 'clamp(42px, 10vw, 72px)' }}
               >
-                Add
-              </button>
+                <div className="headline-line text-text-primary">TALK</div>
+                <div className="headline-line text-text-primary">TO</div>
+                <div className="headline-line text-neon-cyan neon-text">STRANGERS</div>
+              </h1>
+            </div>
+
+            <p
+              ref={subheadRef}
+              className="text-text-secondary text-sm max-w-sm mb-5 leading-relaxed"
+            >
+              Anonymous, one-on-one, no accounts. Pick your interests to find like-minded people.
+            </p>
+
+            {/* CTA Button — full width on mobile */}
+            <button
+              ref={ctaRef}
+              onClick={() => onStartChat(selectedInterests)}
+              className="btn-neon w-full md:w-auto bg-neon-cyan text-black font-heading font-semibold text-base px-8 py-3.5 rounded-lg mb-2 neon-glow hover:shadow-neon-strong transition-all"
+            >
+              {selectedInterests.length > 0 ? `Start Chat (${selectedInterests.length})` : 'Start Chat'}
+            </button>
+
+            {/* "Or press Space" — desktop only */}
+            <div className="hidden md:block">
+              <span ref={microRef} className="font-mono text-[10px] text-text-secondary/55">
+                Or press Space
+              </span>
+            </div>
+
+            {/* Explore More */}
+            <button
+              onClick={() => setShowMore(prev => !prev)}
+              className="mt-4 font-mono text-[10px] text-text-secondary/50 hover:text-neon-cyan active:text-neon-cyan transition-colors flex items-center gap-1"
+            >
+              <span className={`transition-transform inline-block ${showMore ? 'rotate-90' : ''}`}>▶</span>
+              {showMore ? 'Hide' : 'Explore more features'}
+            </button>
+
+            {showMore && (
+              <div className="mt-2 grid grid-cols-2 gap-2 w-full max-w-[min(340px,94vw)] animate-fade-in-up">
+                {[
+                  { icon: '📹', name: 'Video Chat', desc: 'Face-to-face' },
+                  { icon: '🎙️', name: 'Voice Rooms', desc: 'Audio only' },
+                  { icon: '👥', name: 'Group Chat', desc: 'Up to 5 people' },
+                  { icon: '🪪', name: 'Profile Cards', desc: 'Share your vibe' },
+                  { icon: '🏆', name: 'Leaderboard', desc: 'Top chatters' },
+                  { icon: '💎', name: 'Premium Filters', desc: 'Gender, location' },
+                ].map(f => (
+                  <div
+                    key={f.name}
+                    className="relative px-2.5 py-2 rounded-lg border border-white/5 bg-white/[0.02] opacity-40 cursor-not-allowed select-none"
+                  >
+                    <div className="font-mono text-[10px] text-text-secondary flex items-center gap-1.5">
+                      <span>{f.icon}</span>
+                      <span>{f.name}</span>
+                    </div>
+                    <div className="font-mono text-[9px] text-text-secondary/30 mt-0.5 ml-5">{f.desc}</div>
+                    <div className="absolute top-1 right-1.5 font-mono text-[9px] text-text-secondary/30 bg-white/5 px-1 py-0.5 rounded">
+                      🔒 Soon
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {/* Custom interests */}
-            {selectedInterests
-              .filter(i => !interestStats.some(s => s.name === i))
-              .map(interest => (
+
+          {/* Right column: Interest picker */}
+          <div className="interest-section mt-7 md:mt-0 md:max-w-[420px]">
+            <p className="font-mono text-[10px] text-text-secondary/60 mb-2 uppercase tracking-wider">
+              Pick or type interests · optional · max 5
+            </p>
+            {/* Custom interest input */}
+            <div className="flex gap-2 mb-3">
+              <input
+                type="text"
+                value={customInput}
+                onChange={e => setCustomInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); addCustomInterest(); } }}
+                placeholder="Type your own..."
+                maxLength={20}
+                className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2 font-mono text-xs text-text-primary placeholder:text-text-secondary/40 focus:border-neon-cyan/50 focus:outline-none transition-colors"
+                style={{ fontSize: '16px' /* prevent iOS zoom */ }}
+              />
+              {customInput.trim() && (
                 <button
-                  key={interest}
-                  onClick={() => toggleInterest(interest)}
-                  className="px-2 py-0.5 rounded-full font-mono text-[10px] transition-all border bg-neon-cyan/20 text-neon-cyan border-neon-cyan/50 shadow-[0_0_8px_rgba(0,255,200,0.15)]"
+                  onClick={addCustomInterest}
+                  className="px-4 py-2 rounded-full font-mono text-xs bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/50 hover:bg-neon-cyan/30 active:bg-neon-cyan/40 transition-colors"
                 >
-                  {interest} ✕
+                  Add
                 </button>
-              ))}
-            {/* Default interests */}
-            {interestStats.map(interest => {
-              const isSelected = selectedInterests.includes(interest.name);
-              return (
-                <button
-                  key={interest.name}
-                  onClick={() => toggleInterest(interest.name)}
-                  className={`px-2 py-0.5 rounded-full font-mono text-[10px] transition-all border ${isSelected
-                    ? 'bg-neon-cyan/20 text-neon-cyan border-neon-cyan/50 shadow-[0_0_8px_rgba(0,255,200,0.15)]'
-                    : 'bg-white/5 text-text-secondary border-white/10 hover:border-white/25 hover:bg-white/10'
-                    }`}
-                >
-                  {interest.name}
-                  {interest.count > 0 && (
-                    <span className={`ml-1 ${isSelected ? 'text-neon-cyan/70' : 'text-text-secondary/40'}`}>
-                      {interest.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {/* Custom interests */}
+              {selectedInterests
+                .filter(i => !interestStats.some(s => s.name === i))
+                .map(interest => (
+                  <button
+                    key={interest}
+                    onClick={() => toggleInterest(interest)}
+                    className="px-3 py-1.5 rounded-full font-mono text-xs transition-all border bg-neon-cyan/20 text-neon-cyan border-neon-cyan/50 shadow-[0_0_8px_rgba(0,255,200,0.15)] active:scale-95"
+                  >
+                    {interest} ✕
+                  </button>
+                ))}
+              {/* Default interests */}
+              {interestStats.map(interest => {
+                const isSelected = selectedInterests.includes(interest.name);
+                return (
+                  <button
+                    key={interest.name}
+                    onClick={() => toggleInterest(interest.name)}
+                    className={`px-3 py-1.5 rounded-full font-mono text-xs transition-all border active:scale-95 ${isSelected
+                      ? 'bg-neon-cyan/20 text-neon-cyan border-neon-cyan/50 shadow-[0_0_8px_rgba(0,255,200,0.15)]'
+                      : 'bg-white/5 text-text-secondary border-white/10 hover:border-white/25 hover:bg-white/10'
+                      }`}
+                  >
+                    {interest.name}
+                    {interest.count > 0 && (
+                      <span className={`ml-1 ${isSelected ? 'text-neon-cyan/70' : 'text-text-secondary/40'}`}>
+                        {interest.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
+
         </div>
       </div>
-      </div>
 
-      {/* Online Counter — in-flow at the bottom, always visible */}
-      <div className="flex items-center gap-4 pl-[5vw] pb-[3vh] pt-3">
+      {/* Online Counter — always visible at bottom */}
+      <div className="flex items-center gap-4 px-5 pb-4 pt-2 shrink-0">
         {onlineCount > 0 && (
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-neon-cyan animate-pulse" />

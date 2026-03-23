@@ -40,7 +40,7 @@ export function WouldYouRather({ onAnswer, onNext, onLeave, question, myAnswer, 
     const sameAnswer = bothAnswered && myAnswer === theirAnswer;
 
     return (
-        <div className="flex flex-col items-center gap-4 w-full max-w-[320px]">
+        <div className="flex flex-col items-center gap-4 w-full max-w-[min(320px,94vw)]">
             {/* Header */}
             <div className="flex items-center justify-between w-full">
                 <span className="font-heading font-bold text-lg text-text-primary">Would You Rather</span>

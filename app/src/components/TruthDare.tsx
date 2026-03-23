@@ -48,7 +48,7 @@ export function TruthDare({ onSendPrompt, onLeave, prompts }: TruthDareProps) {
     };
 
     return (
-        <div className="flex flex-col items-center gap-4 w-full max-w-[320px]">
+        <div className="flex flex-col items-center gap-4 w-full max-w-[min(320px,94vw)]">
             {/* Header */}
             <div className="flex items-center justify-between w-full">
                 <span className="font-heading font-bold text-lg text-text-primary">Truth or Dare</span>
@@ -61,7 +61,7 @@ export function TruthDare({ onSendPrompt, onLeave, prompts }: TruthDareProps) {
             </div>
 
             {/* Prompt history */}
-            <div className="w-full max-h-[200px] overflow-y-auto flex flex-col gap-2 mb-2">
+            <div className="w-full max-h-[150px] md:max-h-[200px] overflow-y-auto flex flex-col gap-2 mb-2">
                 {prompts.length === 0 && (
                     <p className="font-mono text-xs text-text-secondary/50 text-center py-4">
                         Pick Truth or Dare to start!

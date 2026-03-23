@@ -36,7 +36,7 @@ export function RockPaperScissors({ myChoice, opponentChoice, onChoice, onLeave,
     return (
         <div className="flex flex-col items-center gap-4">
             {/* Header */}
-            <div className="flex items-center justify-between w-full max-w-[300px]">
+            <div className="flex items-center justify-between w-full max-w-[min(300px,94vw)]">
                 <span className="font-heading font-bold text-lg text-text-primary">Rock Paper Scissors</span>
                 <button
                     onClick={onLeave}
@@ -84,7 +84,7 @@ export function RockPaperScissors({ myChoice, opponentChoice, onChoice, onLeave,
                             className="w-20 h-20 md:w-24 md:h-24 rounded-xl border border-white/15 bg-white/5 hover:bg-neon-cyan/10 hover:border-neon-cyan/40 transition-all flex flex-col items-center justify-center gap-1 active:scale-95"
                         >
                             <span className="text-3xl">{EMOJIS[choice]}</span>
-                            <span className="font-mono text-[9px] text-text-secondary capitalize">{choice}</span>
+                            <span className="font-mono text-[10px] text-text-secondary capitalize">{choice}</span>
                         </button>
                     ))}
                 </div>
